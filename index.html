@@ -3,668 +3,545 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🐱 Meow Office · Hermes Agent Command Center</title>
+<title>🐱 Meow Office · Live Cat Agent Simulator</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --bg: #1a1a2e;
-  --floor: #2d2d44;
-  --wall: #252540;
-  --text: #e8e8f0;
-  --text-dim: #8888aa;
-  --text-muted: #6666aa;
-  --border: rgba(255,255,255,0.06);
-}
-
+* { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  font-family: 'Courier New', 'Noto Sans Thai', monospace;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-  image-rendering: pixelated;
-}
-
-/* ==== PIXEL BACKGROUND ==== */
-.pixel-bg {
-  position: fixed; inset: 0; z-index: 0;
-  background-image: 
-    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.015) 3px, rgba(255,255,255,0.015) 4px),
-    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.015) 3px, rgba(255,255,255,0.015) 4px);
-}
-.pixel-floor {
-  position: fixed; bottom: 0; left: 0; right: 0; height: 40%;
-  background: linear-gradient(0deg, #2a1a0a 0%, #3d2b1a 30%, transparent 100%);
-  z-index: 0;
-}
-.pixel-floor::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: repeating-linear-gradient(90deg, transparent, transparent 6px, rgba(255,255,255,0.03) 6px, rgba(255,255,255,0.03) 7px);
-}
-
-/* ==== OFFICE CONTAINER ==== */
-.office {
-  position: relative; z-index: 1;
-  max-width: 1100px; margin: 0 auto; padding: 12px;
-}
-
-/* ==== WALL MONITOR ==== */
-.wall-monitor {
-  background: #1a1a30;
-  border: 2px solid #333355;
-  border-radius: 4px;
-  padding: 16px 20px;
-  margin-bottom: 14px;
-  box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
-}
-.monitor-title {
-  font-size: 12px; font-weight: 700; letter-spacing: 2px;
-  color: #ffcc00; margin-bottom: 12px;
-  text-transform: uppercase;
-  display: flex; align-items: center; gap: 8px;
-}
-.monitor-title .blink { animation: blink 1.5s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-.quota-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 8px;
-}
-.quota-card {
-  background: rgba(0,0,0,0.3);
-  border: 2px solid #2a2a44;
-  padding: 10px 12px;
+  background: #1a1a2e;
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; overflow: hidden;
   font-family: 'Courier New', monospace;
 }
-.quota-card .lbl { font-size: 9px; color: #8888aa; text-transform: uppercase; letter-spacing: 1px; }
-.quota-card .val { font-size: 20px; font-weight: 900; margin: 2px 0; }
-.quota-card .sub { font-size: 10px; color: #6666aa; }
-.quota-bar { height: 4px; background: #1a1a30; margin-top: 6px; border: 1px solid #2a2a44; }
-.quota-bar-fill { height: 2px; margin: 1px; transition: width 1s; }
-
-/* ==== OFFICE FLOOR ==== */
-.floor-title {
-  font-size: 12px; font-weight: 700; letter-spacing: 2px;
-  color: #ffcc00; margin-bottom: 10px; text-transform: uppercase;
+#wrap { position: relative; }
+canvas { display: block; border: 3px solid #333355; border-radius: 4px; cursor: pointer; }
+#info {
+  position: absolute; bottom: 8px; left: 8px; right: 8px;
+  background: rgba(0,0,0,0.85); border: 2px solid #ffcc00;
+  color: #ffcc00; padding: 6px 12px; font-size: 11px;
+  pointer-events: none; display: none; border-radius: 3px;
 }
-.desk-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 10px;
-}
-
-/* ==== CAT DESK ==== */
-.cat-desk {
-  background: linear-gradient(180deg, #252540 0%, #1a1a30 100%);
-  border: 2px solid #333355;
-  padding: 12px;
-  position: relative;
-  cursor: pointer;
-  font-family: 'Courier New', monospace;
-  transition: all 0.3s;
-}
-.cat-desk:hover {
-  border-color: #ffcc00;
-  transform: translateY(-2px);
-}
-.cat-desk.working {
-  border-color: #ff7a00;
-  animation: deskGlow 1s infinite;
-}
-@keyframes deskGlow {
-  0%,100% { box-shadow: 0 0 10px rgba(255,122,0,0.1); }
-  50% { box-shadow: 0 0 25px rgba(255,122,0,0.25); }
-}
-
-/* Status LED */
-.desk-led {
+#quota {
   position: absolute; top: 8px; right: 8px;
-  width: 6px; height: 6px;
-  border: 1px solid currentColor;
+  background: rgba(0,0,0,0.8); border: 1px solid #333355;
+  padding: 6px 10px; font-size: 9px; color: #8888aa;
+  display: flex; gap: 12px; border-radius: 2px;
 }
-.desk-led.online { color: #00ff88; background: #00ff88; }
-.desk-led.working { color: #ff2d95; background: #ff2d95; animation: blink 0.5s infinite; }
-
-/* ==== PIXEL CAT ==== */
-.pixel-cat {
-  width: 80px; height: 110px;
-  margin: 4px auto 6px;
-  position: relative;
-  transform: scale(0.85);
-  transform-origin: top center;
-}
-.cat-desk.working .pixel-cat {
-  animation: catWork 0.6s ease-in-out infinite;
-}
-@keyframes catWork {
-  0%,100% { transform: scale(0.85) translateY(0); }
-  30% { transform: scale(0.87) translateY(-2px); }
-  60% { transform: scale(0.85) translateY(1px); }
-}
-
-/* Cat parts — all cats share this structure */
-.cat-body { position: absolute; }
-.cat-tail {
-  position: absolute; width: 6px; height: 20px;
-  border-radius: 3px; transform-origin: bottom center;
-  animation: tailWag 2s ease-in-out infinite;
-}
-@keyframes tailWag {
-  0%,100% { transform: rotate(-5deg); }
-  50% { transform: rotate(8deg); }
-}
-.cat-desk.working .cat-tail {
-  animation: tailFast 0.4s ease-in-out infinite;
-}
-@keyframes tailFast {
-  0%,100% { transform: rotate(-10deg); }
-  50% { transform: rotate(12deg); }
-}
-
-/* Clothes */
-.cat-outfit {
-  position: absolute; border-radius: 2px;
-}
-
-/* Cat info */
-.cat-name {
-  text-align: center; font-size: 14px; font-weight: 900;
-  margin-top: -4px; letter-spacing: 1px;
-}
-.cat-role {
-  text-align: center; font-size: 9px;
-  color: #8888aa; letter-spacing: 0.5px;
-}
-.cat-stats {
-  background: rgba(0,0,0,0.3); border: 1px solid #2a2a44;
-  padding: 6px 8px; margin-top: 6px;
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 2px 8px; font-size: 10px;
-}
-.cat-stats .lbl { color: #6666aa; }
-.cat-stats .val { text-align: right; font-weight: 700; }
-
-/* ==== WORK HISTORY ==== */
-.history-list {
-  background: rgba(0,0,0,0.3); border: 2px solid #2a2a44;
-  max-height: 260px; overflow-y: auto;
-  font-family: 'Courier New', monospace; font-size: 11px;
-}
-.history-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,0.03);
-}
-.history-time { color: #6666aa; min-width: 60px; font-size: 10px; }
-.history-agent { font-weight: 700; min-width: 65px; font-size: 10px; }
-.history-action { flex: 1; }
-.history-status { font-size: 10px; padding: 1px 6px; font-weight: 700; }
-.history-status.done { color: #00ff88; }
-.history-status.working { color: #ff7a00; animation: blink 1s infinite; }
-
-/* ==== MODAL ==== */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-  z-index: 100; display: none; align-items: center; justify-content: center;
-}
-.modal-overlay.active { display: flex; }
-.modal-box {
-  background: #1a1a30; border: 3px solid #ffcc00;
-  max-width: 480px; width: 95%; max-height: 85vh; overflow-y: auto;
-  padding: 0;
-}
-.modal-header {
-  background: #252540; padding: 16px; text-align: center;
-  border-bottom: 2px solid #333355; position: relative;
-}
-.modal-close {
-  position: absolute; top: 6px; right: 8px;
-  background: none; border: 1px solid #555; color: #aaa;
-  width: 24px; height: 24px; cursor: pointer; font-size: 14px;
-}
-.modal-close:hover { color: #fff; border-color: #fff; }
-.modal-cat { margin: 0 auto 4px; transform: scale(1.1); }
-.modal-body { padding: 12px 16px 16px; }
-.modal-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px; }
-.modal-stat { background: rgba(0,0,0,0.3); border: 1px solid #2a2a44; padding: 8px; text-align: center; }
-.modal-stat .l { font-size: 8px; color: #888; text-transform: uppercase; }
-.modal-stat .v { font-size: 18px; font-weight: 900; }
-.modal-log-list { background: rgba(0,0,0,0.3); border: 1px solid #2a2a44; max-height: 160px; overflow-y: auto; font-size: 11px; }
-.modal-log-item { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); }
-.modal-log-time { color: #666; font-size: 9px; min-width: 50px; }
-.modal-log-dot { width: 5px; height: 5px; flex-shrink: 0; }
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-thumb { background: #333355; }
-
-/* Responsive */
-@media (max-width: 640px) {
-  .desk-grid { grid-template-columns: 1fr; }
-  .quota-grid { grid-template-columns: 1fr 1fr; }
-}
-
-/* ===== FOOTER ===== */
-.footer {
-  text-align: center; font-size: 10px; color: #555;
-  margin-top: 16px; padding-top: 12px;
-  border-top: 1px solid #2a2a44;
+#quota span { color: #00ff88; font-weight: 700; }
+#title {
+  position: absolute; top: 10px; left: 10px;
+  font-size: 11px; color: #ffcc00; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  background: rgba(0,0,0,0.7); padding: 3px 8px;
+  border: 1px solid #333; border-radius: 2px;
 }
 </style>
 </head>
 <body>
-
-<div class="pixel-bg"></div>
-<div class="pixel-floor"></div>
-
-<div class="office">
-
-  <!-- QUOTA BOARD -->
-  <div class="wall-monitor">
-    <div class="monitor-title">📊 QUOTA BOARD <span class="blink">█</span></div>
-    <div class="quota-grid" id="quotaGrid"></div>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="title">🐱 MEOW OFFICE</div>
+  <div id="quota">
+    OR <span>$4.13/$10</span>
+    OC <span>~$2.52/$60</span>
   </div>
-
-  <!-- OFFICE FLOOR -->
-  <div class="floor-title">🏢 🐱 MEOW OFFICE — แมวเหมียวออฟฟิศ (คลิกดูประวัติ)</div>
-  <div class="desk-grid" id="deskGrid"></div>
-
-  <!-- WORK HISTORY -->
-  <div class="floor-title" style="margin-top:16px;">📋 WORK HISTORY — ล่าสุด</div>
-  <div class="history-list" id="historyList"></div>
-
-  <div class="footer" id="footer">🐱 Meow Office v1.0 · Hermes Agent · <span id="sysTime"></span></div>
-</div>
-
-<!-- MODAL -->
-<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
-  <div class="modal-box"><div id="modalContent"></div></div>
+  <div id="info"></div>
 </div>
 
 <script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const info = document.getElementById('info');
+
+const W = 960, H = 580;
+canvas.width = W; canvas.height = H;
+
+// Scale to fit viewport
+function resize() {
+  const scale = Math.min(innerWidth/W, innerHeight/H, 1);
+  canvas.style.width = W*scale+'px';
+  canvas.style.height = H*scale+'px';
+}
+resize();
+window.addEventListener('resize', resize);
+
 // ============================================================
-// CAT AGENTS
+// OFFICE LAYOUT
 // ============================================================
-const CATS = [
-  {
-    id:'thongek', name:'ทองเอก', breed:'วิเชียรมาศ', sub:'🧠 CEO · ผู้บัญชาการ',
-    role:'Orchestrator', status:'online',
-    // Siamese: cream body, dark seal points, blue eyes
-    bodyColor:'#faf0dc', pointColor:'#3d2b1a', eyeColor:'#4488ff',
-    outfitColor:'#1a2a44', outfitAccent:'#ffcc00',
-    c1:'#ffcc00', c2:'#ffaa00',
-    tasks:1284, rate:97, cpu:34,
-    // CSS position specifics
-    tailW:5, tailH:22, tailColor:'#3d2b1a', tailTip:'#3d2b1a',
-    earInner:'#f5d5c8',
-    recentLogs:[]
-  },
-  {
-    id:'eren', name:'เอเรน', breed:'แมวส้มขนฟู', sub:'💻 นักพัฒนา · Fluffy Dev',
-    role:'Full-Stack Dev', status:'online',
-    // Orange fluffy: bright orange, very fluffy, green eyes
-    bodyColor:'#ff8833', pointColor:'#ff9944', eyeColor:'#44cc44',
-    outfitColor:'#ffffff', outfitAccent:'#ff4444', // white shirt + red tie
-    c1:'#ff8833', c2:'#ff6622',
-    tasks:2341, rate:95, cpu:58,
-    tailW:7, tailH:24, tailColor:'#ff9944', tailTip:'#ffffff',
-    earInner:'#ffbb88', fluffy:true,
-    recentLogs:[]
-  },
-  {
-    id:'codin', name:'Codin', breed:'สีสวาท (Korat)', sub:'🐱💻 โปรแกรมเมอร์',
-    role:'Backend Dev', status:'online',
-    // Korat: silver-blue, green eyes, hoodie
-    bodyColor:'#8899aa', pointColor:'#667788', eyeColor:'#44dd44',
-    outfitColor:'#2a2a3a', outfitAccent:'#44dd44', // dark hoodie
-    c1:'#44dd44', c2:'#33aa33',
-    tasks:3421, rate:94, cpu:72,
-    tailW:5, tailH:20, tailColor:'#667788', tailTip:'#556677',
-    earInner:'#aabbcc',
-    recentLogs:[]
-  },
-  {
-    id:'navi', name:'Navi', breed:'ขาวมณี', sub:'🌐 นักสำรวจเว็บ',
-    role:'Web Explorer', status:'online',
-    // Khao Manee: pure white, odd eyes (one blue one gold)
-    bodyColor:'#ffffff', pointColor:'#eeeeee', eyeColor:'#ffaa00', eyeColor2:'#4488ff',
-    outfitColor:'#336644', outfitAccent:'#ffaa00', // explorer vest
-    c1:'#ffaa00', c2:'#ff8800',
-    tasks:2156, rate:96, cpu:28,
-    tailW:5, tailH:21, tailColor:'#eeeeee', tailTip:'#dddddd',
-    earInner:'#ffdddd', oddEyes:true,
-    recentLogs:[]
-  },
-  {
-    id:'ticktock', name:'Tick-Tock', breed:'ลายสลิด', sub:'⏰ นายเวลา',
-    role:'Scheduler', status:'online',
-    // Tabby: gray with dark stripes, yellow eyes
-    bodyColor:'#999999', pointColor:'#666666', eyeColor:'#ffcc00',
-    outfitColor:'#443322', outfitAccent:'#ffcc00', // brown vest with gold watch
-    c1:'#ffcc00', c2:'#ddaa00',
-    tasks:876, rate:99, cpu:12,
-    tailW:5, tailH:19, tailColor:'#666666', tailTip:'#555555',
-    earInner:'#bbbbbb', striped:true,
-    recentLogs:[]
-  },
-  {
-    id:'nora', name:'Nora', breed:'แมวสามสี', sub:'📚 ผู้รักษาความทรงจำ',
-    role:'Memory Keeper', status:'online',
-    // Calico: white base + orange + black patches
-    bodyColor:'#ffffff', pointColor:'#ff9944', eyeColor:'#ff88cc',
-    outfitColor:'#553344', outfitAccent:'#ff88cc', // purple scarf
-    c1:'#ff88cc', c2:'#cc66aa',
-    tasks:5432, rate:100, cpu:18,
-    tailW:6, tailH:20, tailColor:'#333333', tailTip:'#ff9944', // black+orange tail
-    earInner:'#ffbbcc', calico:true,
-    recentLogs:[]
-  },
-  {
-    id:'filo', name:'Filo', breed:'แมวดำ', sub:'📁 จอมจัดเก็บ',
-    role:'File Manager', status:'online',
-    // Black cat: sleek black, yellow eyes, glasses
-    bodyColor:'#1a1a1a', pointColor:'#111111', eyeColor:'#ffdd00',
-    outfitColor:'#333344', outfitAccent:'#ffffff', // neat vest + glasses
-    c1:'#8888ff', c2:'#6666dd',
-    tasks:1987, rate:95, cpu:45,
-    tailW:5, tailH:22, tailColor:'#111111', tailTip:'#0a0a0a',
-    earInner:'#333333',
-    recentLogs:[]
-  }
+const desks = [
+  { x:120, y:100, label:'ทองเอก', color:'#ffcc00' },
+  { x:340, y:100, label:'เอเรน', color:'#ff8833' },
+  { x:560, y:100, label:'Codin', color:'#44dd44' },
+  { x:780, y:100, label:'Navi', color:'#ffaa00' },
+  { x:230, y:330, label:'Tick-Tock', color:'#ffcc00' },
+  { x:450, y:330, label:'Nora', color:'#ff88cc' },
+  { x:670, y:330, label:'Filo', color:'#8888ff' },
+];
+
+const coffeeMachine = { x:30, y:430 };
+const plant1 = { x:880, y:60 };
+const plant2 = { x:50, y:60 };
+
+// ============================================================
+// CAT DATA
+// ============================================================
+const cats = [
+  { id:'thongek', name:'ทองเอก', breed:'วิเชียรมาศ',
+    body:'#faf0dc', points:'#3d2b1a', eyes:'#4488ff', inner:'#f5d5c8',
+    outfit:'#1a2a44', accent:'#ffcc00',
+    x:120, y:180, tx:120, ty:180, state:'working', desk:0,
+    tasks:1284, rate:97, 
+    logs:['ประชุมทีมแมว','วิเคราะห์ dashboard','จัดสรรงานให้ agent'] },
+  { id:'eren', name:'เอเรน', breed:'แมวส้มขนฟู',
+    body:'#ff8833', points:'#ff9944', eyes:'#44cc44', inner:'#ffbb88',
+    outfit:'#ffffff', accent:'#ff4444',
+    x:340, y:180, tx:340, ty:180, state:'working', desk:1,
+    tasks:2341, rate:95,
+    logs:['เขียน CSS pixel art','ดีไซน์ตัวละครแมว','ทำ animation'] },
+  { id:'codin', name:'Codin', breed:'สีสวาท',
+    body:'#8899aa', points:'#667788', eyes:'#44dd44', inner:'#aabbcc',
+    outfit:'#2a2a3a', accent:'#44dd44',
+    x:560, y:180, tx:560, ty:180, state:'working', desk:2,
+    tasks:3421, rate:94,
+    logs:['Refactor โค้ด','debug ระบบ','เขียน API'] },
+  { id:'navi', name:'Navi', breed:'ขาวมณี',
+    body:'#ffffff', points:'#eeeeee', eyes:'#ffaa00', inner:'#ffdddd',
+    outfit:'#336644', accent:'#ffaa00',
+    x:780, y:180, tx:780, ty:180, state:'working', desk:3,
+    tasks:2156, rate:96,
+    logs:['ค้นหาข้อมูล','scrape เว็บ','วิเคราะห์รูปภาพ'] },
+  { id:'ticktock', name:'Tick-Tock', breed:'ลายสลิด',
+    body:'#999999', points:'#666666', eyes:'#ffcc00', inner:'#bbbbbb',
+    outfit:'#443322', accent:'#ffcc00',
+    x:230, y:410, tx:230, ty:410, state:'working', desk:4,
+    tasks:876, rate:99,
+    logs:['แจ้งตารางสอน','cron backup','ส่งสรุปรายวัน'] },
+  { id:'nora', name:'Nora', breed:'สามสี',
+    body:'#ffffff', points:'#ff9944', eyes:'#ff88cc', inner:'#ffbbcc',
+    outfit:'#553344', accent:'#ff88cc',
+    x:450, y:410, tx:450, ty:410, state:'working', desk:5,
+    tasks:5432, rate:100,
+    logs:['บันทึกความจำ','sync ข้อมูล','ค้น session เก่า'] },
+  { id:'filo', name:'Filo', breed:'แมวดำ',
+    body:'#1a1a1a', points:'#111111', eyes:'#ffdd00', inner:'#333333',
+    outfit:'#333344', accent:'#ffffff',
+    x:670, y:410, tx:670, ty:410, state:'working', desk:6,
+    tasks:1987, rate:95,
+    logs:['จัดการไฟล์','เขียน document','จัดระเบียบ root'] },
 ];
 
 // ============================================================
-// QUOTA DATA
+// DRAWING HELPERS
 // ============================================================
-const QUOTA = [
-  { label:'💰 OpenRouter (เดือน)', val:'$4.13', total:'$10', pct:41, color:'#00d4ff', sub:'หมดเขต 19 ก.ค.' },
-  { label:'⚡ OpenCode (5ชม)', val:'~$0.18', total:'$12', pct:1, color:'#b44aff', sub:'รีเซ็ตทุก 5 ชม.' },
-  { label:'📆 OpenCode (สัปดาห์)', val:'~$0.63', total:'$30', pct:2, color:'#8855ff', sub:'ประมาณการ' },
-  { label:'💳 OpenCode (เดือน)', val:'~$2.52', total:'$60', pct:4, color:'#00ff88', sub:'~4% ใช้ไป' },
-];
-
-// ============================================================
-// WORK HISTORY
-// ============================================================
-let history = [];
-
-function addHistory(catId, action, status='done') {
-  const now = new Date();
-  const time = now.toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const cat = CATS.find(c => c.id === catId);
-  const entry = { time, catId, name: cat?.name||catId, color: cat?.c1||'#888', action, status, ts: now.getTime() };
-  history.unshift(entry);
-  if (history.length > 50) history = history.slice(0, 50);
-  if (cat) {
-    cat.recentLogs.unshift({ time, action, status });
-    if (cat.recentLogs.length > 10) cat.recentLogs = cat.recentLogs.slice(0, 10);
+function drawDesk(dx, dy, color, label) {
+  // Desk shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(dx-2, dy+2, 72, 32);
+  // Desk top
+  ctx.fillStyle = '#3a3a50';
+  ctx.fillRect(dx, dy, 70, 30);
+  ctx.strokeStyle = '#555';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(dx, dy, 70, 30);
+  // Monitor
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(dx+20, dy-14, 30, 18);
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(dx+20, dy-14, 30, 18);
+  // Screen glow
+  ctx.fillStyle = color+'22';
+  ctx.fillRect(dx+22, dy-12, 26, 14);
+  // Desk legs
+  ctx.fillStyle = '#444';
+  ctx.fillRect(dx+4, dy+30, 4, 8);
+  ctx.fillRect(dx+62, dy+30, 4, 8);
+  // Name plate
+  ctx.fillStyle = '#111';
+  ctx.fillRect(dx+8, dy+2, 54, 10);
+  ctx.fillStyle = color;
+  ctx.font = '7px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, dx+35, dy+10);
+  // Activity dots on screen
+  const t = Date.now()/1000;
+  for (let i=0;i<3;i++) {
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.3 + 0.5*Math.abs(Math.sin(t*2+i));
+    ctx.fillRect(dx+24+i*8, dy-10, 4, 4);
+    ctx.globalAlpha = 1;
   }
-  renderHistory();
 }
 
-// ============================================================
-// RENDER FUNCTIONS
-// ============================================================
-function renderQuota() {
-  const grid = document.getElementById('quotaGrid');
-  grid.innerHTML = QUOTA.map(q => `
-    <div class="quota-card">
-      <div class="lbl">${q.label}</div>
-      <div class="val" style="color:${q.color}">${q.val}</div>
-      <div class="sub">${q.total} · ${q.sub}</div>
-      <div class="quota-bar"><div class="quota-bar-fill" style="width:${q.pct}%;background:${q.color}"></div></div>
-    </div>
-  `).join('');
-}
+function drawCat(cat) {
+  const { x, y, body, points, eyes, inner, outfit, accent, state } = cat;
+  ctx.save();
+  ctx.translate(x, y);
 
-// Pixel cat CSS art generator
-function renderCatSVG(cat) {
-  // Each cat = CSS pixel art built from divs
-  const bc = cat.bodyColor, pc = cat.pointColor, ec = cat.eyeColor;
-  const ec2 = cat.eyeColor2 || ec;
-  const fluffy = cat.fluffy || false;
-  const striped = cat.striped || false;
-  const calico = cat.calico || false;
-
-  let extraFur = '';
-  if (fluffy) {
-    extraFur = `
-      <div style="position:absolute;top:-2px;left:-4px;width:8px;height:6px;background:${cat.pointColor};border-radius:50%;"></div>
-      <div style="position:absolute;top:-2px;right:-4px;width:8px;height:6px;background:${cat.pointColor};border-radius:50%;"></div>
-      <div style="position:absolute;top:28px;left:-6px;width:6px;height:10px;background:${cat.bodyColor};border-radius:50%;"></div>
-      <div style="position:absolute;top:28px;right:-6px;width:6px;height:10px;background:${cat.bodyColor};border-radius:50%;"></div>
-    `;
+  // Walking animation
+  let bob = 0, legOff = 0;
+  if (state === 'walking') {
+    const t = Date.now()/150;
+    bob = Math.abs(Math.sin(t*2))*3;
+    legOff = Math.sin(t*3)*2;
   }
 
-  // Calico patches
-  let patches = '';
-  if (calico) {
-    patches = `
-      <div style="position:absolute;top:14px;left:18px;width:8px;height:8px;background:#ff9944;border-radius:50%;"></div>
-      <div style="position:absolute;top:8px;right:12px;width:6px;height:6px;background:#333;border-radius:50%;"></div>
-    `;
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.beginPath();
+  ctx.ellipse(0, 22+bob, 14, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // TAIL
+  const tailT = state==='working' ? Date.now()/300 : Date.now()/200;
+  const tailAngle = state==='walking' ? Math.sin(tailT*4)*0.4 : Math.sin(tailT)*0.25;
+  ctx.save();
+  ctx.translate(0, 6+bob);
+  ctx.rotate(0.3 + tailAngle);
+  ctx.fillStyle = points;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(8, -8, 12, -18);
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = points;
+  ctx.stroke();
+  // Tail tip
+  ctx.fillStyle = points;
+  ctx.beginPath();
+  ctx.arc(12, -18, 3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  // LEGS (back)
+  ctx.fillStyle = body;
+  ctx.fillRect(-4+legOff, 14+bob, 7, 8);
+  ctx.fillRect(2-legOff, 14+bob, 7, 8);
+  // Paws
+  ctx.fillStyle = points;
+  ctx.beginPath();
+  ctx.arc(-0.5+legOff, 22+bob, 4.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath();
+  ctx.arc(5.5-legOff, 22+bob, 4.5, 0, Math.PI*2); ctx.fill();
+
+  // BODY with outfit
+  ctx.fillStyle = outfit;
+  ctx.fillRect(-8, 0+bob, 16, 18);
+  // Outfit detail - tie/scarf
+  ctx.fillStyle = accent;
+  ctx.fillRect(-1, 2+bob, 3, 10);
+  // Belt
+  ctx.fillStyle = '#333';
+  ctx.fillRect(-8, 12+bob, 16, 2);
+
+  // ARMS
+  const armSwing = state==='walking' ? Math.sin(Date.now()/150)*5 : 0;
+  // Left arm
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.ellipse(-10+armSwing, 5+bob, 4, 10, -0.3, 0, Math.PI*2);
+  ctx.fill();
+  // Right arm
+  ctx.beginPath();
+  ctx.ellipse(10-armSwing, 5+bob, 4, 10, 0.3, 0, Math.PI*2);
+  ctx.fill();
+  // Paw hands
+  ctx.fillStyle = points;
+  ctx.beginPath(); ctx.arc(-10+armSwing, 14+bob, 3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(10-armSwing, 14+bob, 3, 0, Math.PI*2); ctx.fill();
+
+  // HEAD
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.arc(0, -5+bob, 12, 0, Math.PI*2);
+  ctx.fill();
+
+  // EARS
+  // Left ear
+  ctx.fillStyle = points;
+  ctx.beginPath();
+  ctx.moveTo(-10, -8+bob);
+  ctx.lineTo(-14, -22+bob);
+  ctx.lineTo(-3, -10+bob);
+  ctx.fill();
+  // Left inner
+  ctx.fillStyle = inner;
+  ctx.beginPath();
+  ctx.moveTo(-8, -9+bob);
+  ctx.lineTo(-11, -18+bob);
+  ctx.lineTo(-4, -10+bob);
+  ctx.fill();
+  // Right ear
+  ctx.fillStyle = points;
+  ctx.beginPath();
+  ctx.moveTo(10, -8+bob);
+  ctx.lineTo(14, -22+bob);
+  ctx.lineTo(3, -10+bob);
+  ctx.fill();
+  // Right inner
+  ctx.fillStyle = inner;
+  ctx.beginPath();
+  ctx.moveTo(8, -9+bob);
+  ctx.lineTo(11, -18+bob);
+  ctx.lineTo(4, -10+bob);
+  ctx.fill();
+
+  // Face mask (siamese)
+  if (cat.id === 'thongek') {
+    ctx.fillStyle = points+'44';
+    ctx.beginPath();
+    ctx.ellipse(0, -4+bob, 8, 7, 0, 0, Math.PI*2);
+    ctx.fill();
   }
 
-  // Stripes for tabby
-  let stripes = '';
-  if (striped) {
-    stripes = `
-      <div style="position:absolute;top:6px;left:8px;right:8px;height:2px;background:#555;"></div>
-      <div style="position:absolute;top:12px;left:6px;right:6px;height:2px;background:#555;"></div>
-      <div style="position:absolute;top:18px;left:8px;right:8px;height:2px;background:#555;"></div>
-    `;
+  // Eyes
+  const eyeY = -6+bob;
+  // Left eye
+  ctx.fillStyle = eyes;
+  ctx.beginPath(); ctx.ellipse(-5, eyeY, 3, 3.5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(-4.5, eyeY+0.5, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(-5, eyeY-0.5, 0.8, 0, Math.PI*2); ctx.fill();
+  // Right eye
+  ctx.fillStyle = eyes;
+  ctx.beginPath(); ctx.ellipse(5, eyeY, 3, 3.5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(5.5, eyeY+0.5, 1.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(5, eyeY-0.5, 0.8, 0, Math.PI*2); ctx.fill();
+
+  // Nose
+  ctx.fillStyle = '#ff9999';
+  ctx.beginPath(); ctx.arc(0, -1+bob, 2, 0, Math.PI*2); ctx.fill();
+  // Mouth
+  ctx.strokeStyle = '#666';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(0, 1+bob);
+  ctx.quadraticCurveTo(-3, 3+bob, -5, 2+bob);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, 1+bob);
+  ctx.quadraticCurveTo(3, 3+bob, 5, 2+bob);
+  ctx.stroke();
+
+  // Whiskers
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 0.6;
+  for (let s=-1;s<=1;s+=2) {
+    ctx.beginPath(); ctx.moveTo(s*4, -1+bob); ctx.lineTo(s*12, -4+bob); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s*4, 0+bob); ctx.lineTo(s*12, 0+bob); ctx.stroke();
   }
 
-  // Odd eyes indicator
-  let eyeStyle2 = '';
-  if (cat.oddEyes) {
-    eyeStyle2 = `background:${ec2};`;
+  // Working indicator
+  if (state === 'working') {
+    const t = Date.now()/200;
+    ctx.fillStyle = '#ffcc00';
+    ctx.globalAlpha = 0.4+0.3*Math.sin(t*3);
+    ctx.beginPath(); ctx.arc(8, -12+bob, 3, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
   }
 
-  return `
-    <!-- Tail -->
-    <div class="cat-tail" style="bottom:20px;right:-8px;width:${cat.tailW}px;height:${cat.tailH}px;background:${cat.tailColor};border-radius:0 0 4px 4px;">
-      <div style="position:absolute;top:-2px;width:${cat.tailW}px;height:6px;background:${cat.tailTip};border-radius:50%;"></div>
-    </div>
-
-    <!-- BODY (standing) -->
-    <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:36px;height:40px;background:${cat.outfitColor};border-radius:4px 4px 0 0;">
-      <!-- Shirt/outfit detail -->
-      <div style="position:absolute;top:6px;left:50%;transform:translateX(-50%);width:8px;height:14px;background:${cat.outfitAccent};border-radius:1px;"></div>
-      <!-- Arms -->
-      <div style="position:absolute;top:10px;left:-6px;width:8px;height:22px;background:${cat.outfitColor};border-radius:3px 0 0 3px;"></div>
-      <div style="position:absolute;top:10px;right:-6px;width:8px;height:22px;background:${cat.outfitColor};border-radius:0 3px 3px 0;"></div>
-      <!-- Paw hands -->
-      <div style="position:absolute;top:30px;left:-6px;width:10px;height:6px;background:${bc};border-radius:50%;"></div>
-      <div style="position:absolute;top:30px;right:-6px;width:10px;height:6px;background:${bc};border-radius:50%;"></div>
-    </div>
-
-    <!-- LEGS -->
-    <div style="position:absolute;bottom:0px;left:50%;transform:translateX(-50%);">
-      <div style="position:absolute;left:-6px;width:10px;height:14px;background:${cat.outfitColor};border-radius:0 0 2px 2px;"></div>
-      <div style="position:absolute;left:4px;width:10px;height:14px;background:${cat.outfitColor};border-radius:0 0 2px 2px;"></div>
-      <!-- Paws -->
-      <div style="position:absolute;left:-6px;bottom:-2px;width:12px;height:5px;background:${bc};border-radius:50%;"></div>
-      <div style="position:absolute;left:4px;bottom:-2px;width:12px;height:5px;background:${bc};border-radius:50%;"></div>
-    </div>
-
-    <!-- HEAD -->
-    <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:44px;height:38px;background:${bc};border-radius:46% 46% 40% 40%;">
-      ${patches}
-      ${stripes}
-      <!-- EARS -->
-      <div style="position:absolute;top:-10px;left:2px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid ${pc};"></div>
-      <div style="position:absolute;top:-10px;right:2px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid ${pc};"></div>
-      <!-- Inner ears -->
-      <div style="position:absolute;top:-6px;left:5px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid ${cat.earInner};"></div>
-      <div style="position:absolute;top:-6px;right:5px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid ${cat.earInner};"></div>
-      ${extraFur}
-      <!-- Eyes -->
-      <div style="position:absolute;top:14px;left:7px;width:7px;height:8px;background:${ec};border-radius:50%;${cat.oddEyes?'':''}">
-        <div style="position:absolute;top:2px;left:1px;width:3px;height:4px;background:#111;border-radius:50%;"></div>
-        <div style="position:absolute;top:1px;left:0px;width:1.5px;height:1.5px;background:white;border-radius:50%;"></div>
-      </div>
-      <div style="position:absolute;top:14px;right:7px;width:7px;height:8px;background:${ec2};border-radius:50%;${eyeStyle2}">
-        <div style="position:absolute;top:2px;left:1px;width:3px;height:4px;background:#111;border-radius:50%;"></div>
-        <div style="position:absolute;top:1px;left:0px;width:1.5px;height:1.5px;background:white;border-radius:50%;"></div>
-      </div>
-      <!-- Nose & Mouth -->
-      <div style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:5px;height:4px;background:#ff9999;border-radius:50%;"></div>
-      <div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:8px;height:3px;border-bottom:1px solid #666;border-radius:0 0 4px 4px;"></div>
-      <!-- Whiskers -->
-      <div style="position:absolute;top:20px;left:-6px;width:8px;height:1px;background:rgba(255,255,255,0.4);"></div>
-      <div style="position:absolute;top:22px;left:-7px;width:9px;height:1px;background:rgba(255,255,255,0.4);"></div>
-      <div style="position:absolute;top:20px;right:-6px;width:8px;height:1px;background:rgba(255,255,255,0.4);"></div>
-      <div style="position:absolute;top:22px;right:-7px;width:9px;height:1px;background:rgba(255,255,255,0.4);"></div>
-      <!-- Siamese face mask -->
-      ${cat.id==='thongek' ? `<div style="position:absolute;top:10px;left:8px;right:8px;height:20px;background:${pc}44;border-radius:50%;"></div>` : ''}
-    </div>
-  `;
-}
-
-function renderDesks() {
-  const grid = document.getElementById('deskGrid');
-  grid.innerHTML = CATS.map(cat => {
-    const stLbl = cat.status==='working'?'🔴':'🟢';
-    return `
-    <div class="cat-desk${cat.status==='working'?' working':''}" onclick="openModal('${cat.id}')">
-      <div class="desk-led ${cat.status==='working'?'working':'online'}"></div>
-      <div class="pixel-cat">
-        ${renderCatSVG(cat)}
-      </div>
-      <div class="cat-name" style="color:${cat.c1}">${cat.name}</div>
-      <div class="cat-role">${stLbl} ${cat.breed} · ${cat.role}${cat.status==='working'?' ⚡':''}</div>
-      <div class="cat-stats">
-        <span class="lbl">🔄 งาน</span><span class="val" style="color:${cat.c1}">${cat.tasks.toLocaleString()}</span>
-        <span class="lbl">✅ สำเร็จ</span><span class="val" style="color:${cat.c2}">${cat.rate}%</span>
-        <span class="lbl">⚡ CPU</span><span class="val" style="color:${cat.cpu>70?'#ff7a00':'#ffcc00'}">${cat.cpu}%</span>
-      </div>
-    </div>
-    `;
-  }).join('');
-}
-
-function renderHistory() {
-  const el = document.getElementById('historyList');
-  const items = history.slice(0, 20);
-  el.innerHTML = items.length ? items.map(h => `
-    <div class="history-item">
-      <span class="history-time">${h.time}</span>
-      <span class="history-agent" style="color:${h.color}">${h.name}</span>
-      <span class="history-action">${h.action}</span>
-      <span class="history-status ${h.status}">${h.status==='done'?'✔':h.status==='working'?'⚡':'✘'}</span>
-    </div>
-  `).join('') : '<div style="padding:12px;text-align:center;color:#555;">รอสักครู่...กิจกรรมกำลังจะมา 🐱</div>';
+  ctx.restore();
 }
 
 // ============================================================
-// MODAL
+// DRAW SCENE
 // ============================================================
-function openModal(catId) {
-  const cat = CATS.find(c => c.id === catId);
-  if (!cat) return;
-  document.getElementById('modal').classList.add('active');
-  const stLbl = cat.status==='working'?'🔴 กำลังทำงาน':'🟢 ออนไลน์';
-  const logs = cat.recentLogs?.length ? cat.recentLogs : [{time:'--:--', action:'เริ่มปฏิบัติการ...', status:'done'}];
-
-  document.getElementById('modalContent').innerHTML = `
-    <div class="modal-header">
-      <button class="modal-close" onclick="closeModal()">✕</button>
-      <div class="pixel-cat modal-cat">${renderCatSVG(cat)}</div>
-      <div style="font-size:20px;font-weight:900;color:${cat.c1};margin-top:4px;">${cat.name}</div>
-      <div style="font-size:12px;color:#aaa;">🐱 ${cat.breed} · ${cat.sub} · ${stLbl}</div>
-    </div>
-    <div class="modal-body">
-      <div class="modal-stats">
-        <div class="modal-stat"><div class="l">🔄 งาน</div><div class="v" style="color:${cat.c1}">${cat.tasks.toLocaleString()}</div></div>
-        <div class="modal-stat"><div class="l">✅ สำเร็จ</div><div class="v" style="color:${cat.c2}">${cat.rate}%</div></div>
-        <div class="modal-stat"><div class="l">⚡ CPU</div><div class="v" style="color:#ffcc00">${cat.cpu}%</div></div>
-      </div>
-      <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">📋 ประวัติทำงาน</div>
-      <div class="modal-log-list">
-        ${logs.map(l => `
-          <div class="modal-log-item">
-            <span class="modal-log-dot" style="background:${l.status==='working'?'#ff7a00':cat.c1};${l.status==='working'?'animation:blink 0.6s infinite':''}"></span>
-            <span class="modal-log-time">${l.time}</span>
-            <span>${l.action}</span>
-            <span style="margin-left:auto;font-size:9px;color:${l.status==='working'?'#ff7a00':'#888'}">${l.status==='working'?'⚡':'✔'}</span>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  `;
-}
-
-function closeModal() { document.getElementById('modal').classList.remove('active'); }
-document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
-
-// ============================================================
-// LIVE SIMULATION
-// ============================================================
-function simulate() {
-  const cat = CATS[Math.floor(Math.random() * CATS.length)];
-  if (Math.random() > 0.35) {
-    cat.status = 'working';
-    const actions = ['กำลังวิเคราะห์คำขอ...','รัน task ใหม่','อ่านไฟล์','เขียนโค้ด','ค้นหาข้อมูล','บันทึกความจำ','วางแผนงาน','ตรวจโค้ด','sync ข้อมูล','debug ระบบ'];
-    addHistory(cat.id, actions[Math.floor(Math.random()*actions.length)], 'working');
-    setTimeout(() => {
-      cat.status = 'online';
-      const e = history.find(h => h.catId===cat.id && h.status==='working');
-      if (e) e.status = 'done';
-      renderAll();
-    }, 3000 + Math.random()*5000);
+function drawFloor() {
+  // Floor
+  ctx.fillStyle = '#2a2a3a';
+  ctx.fillRect(0, 0, W, H);
+  // Floor tiles
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  for (let x=0;x<W;x+=40) {
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
   }
-  renderAll();
+  for (let y=0;y<H;y+=40) {
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+  // Carpet area
+  ctx.fillStyle = 'rgba(60,40,30,0.3)';
+  ctx.fillRect(80, 60, 820, 480);
+
+  // Walls
+  ctx.fillStyle = '#1e1e32';
+  ctx.fillRect(0,0,W,8); // top wall
+  ctx.fillRect(0,0,8,H); // left wall
+  ctx.fillRect(W-8,0,8,H); // right wall
+  ctx.fillRect(0,H-8,W,8); // bottom wall
 }
 
-function renderAll() {
-  renderDesks();
-  renderHistory();
+function drawProps() {
+  // Coffee machine
+  ctx.fillStyle = '#443322';
+  ctx.fillRect(coffeeMachine.x, coffeeMachine.y, 20, 28);
+  ctx.fillStyle = '#ffcc00';
+  ctx.fillRect(coffeeMachine.x+4, coffeeMachine.y+4, 12, 6);
+  ctx.fillStyle = '#fff';
+  ctx.font = '7px monospace';
+  ctx.fillText('☕', coffeeMachine.x+5, coffeeMachine.y+26);
+
+  // Plants
+  [plant1, plant2].forEach(p => {
+    ctx.fillStyle = '#553322';
+    ctx.fillRect(p.x+6, p.y+12, 12, 16);
+    ctx.fillStyle = '#228833';
+    ctx.beginPath(); ctx.arc(p.x+12, p.y+8, 14, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#33aa44';
+    ctx.beginPath(); ctx.arc(p.x+12, p.y+6, 10, 0, Math.PI*2); ctx.fill();
+  });
 }
 
 // ============================================================
-// INIT
+// MAIN LOOP
 // ============================================================
-(function init() {
-  renderQuota();
-  renderAll();
+function update() {
+  cats.forEach(cat => {
+    const dx = cat.tx - cat.x;
+    const dy = cat.ty - cat.y;
+    const dist = Math.sqrt(dx*dx+dy*dy);
 
-  // Seed history
-  const seeds = [
-    {cat:'thongek', action:'ประชุมทีมแมว — มอบหมายงาน dashboard', status:'done'},
-    {cat:'eren', action:'เขียน CSS pixel art แมว — ออกแบบตัวละคร', status:'done'},
-    {cat:'codin', action:'Refactor animation engine สำหรับแมวขยับ', status:'done'},
-    {cat:'thongek', action:'ดึงข้อมูล OpenRouter API — usage $4.13/$10', status:'done'},
-    {cat:'navi', action:'ค้นคว้า pixel agents extension จาก marketplace', status:'done'},
-    {cat:'nora', action:'บันทึกความจำ — แมวแต่ละสายพันธุ์ + สี', status:'done'},
-    {cat:'ticktock', action:'แจ้งตารางสอน 06:00 — 21 คาบ/สัปดาห์', status:'done'},
-    {cat:'filo', action:'บันทึกไฟล์ meow-office.html ขึ้น GitHub', status:'done'},
-    {cat:'eren', action:'ออกแบบเอเรน — แมวส้มขนฟูใส่สูท', status:'done'},
-    {cat:'thongek', action:'วางแผนสถาปัตยกรรม Meow Office v1.0', status:'done'},
-  ];
-  const now = Date.now();
-  seeds.forEach((s,i) => {
-    const t = new Date(now - (seeds.length-i)*45000);
-    const time = t.toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    const cat = CATS.find(c => c.id===s.cat);
-    history.unshift({ time, catId:s.cat, name:cat?.name||s.cat, color:cat?.c1||'#888', action:s.action, status:s.status, ts:t.getTime() });
-    if (cat) {
-      cat.recentLogs.unshift({ time, action:s.action, status:s.status });
-      if (cat.recentLogs.length > 10) cat.recentLogs = cat.recentLogs.slice(0, 10);
+    if (dist > 1) {
+      cat.state = 'walking';
+      const speed = 2;
+      cat.x += (dx/dist) * speed;
+      cat.y += (dy/dist) * speed;
+    } else {
+      cat.x = cat.tx;
+      cat.y = cat.ty;
+      if (cat.state === 'walking') {
+        cat.state = 'working';
+      }
     }
   });
-  renderAll();
+}
 
-  setInterval(simulate, 6000 + Math.random()*5000);
-  setTimeout(simulate, 2000);
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  drawFloor();
+  drawProps();
 
-  // Live clock
-  setInterval(() => {
-    document.getElementById('sysTime').textContent = new Date().toLocaleTimeString('th-TH');
-  }, 1000);
-})();
+  // Draw desks
+  desks.forEach(d => drawDesk(d.x, d.y, d.color, d.label));
+
+  // Draw cats (sorted by y for depth)
+  const sorted = [...cats].sort((a,b) => a.y - b.y);
+  sorted.forEach(cat => drawCat(cat));
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ============================================================
+// AI: ASSIGN TASKS (random cat walks to random spot)
+// ============================================================
+function assignRandomTask() {
+  const cat = cats[Math.floor(Math.random()*cats.length)];
+  if (cat.state === 'walking') return;
+
+  // 70% walk to desk, 30% walk to coffee/random
+  if (Math.random() < 0.7) {
+    const d = desks[cat.desk];
+    cat.tx = d.x + 35;
+    cat.ty = d.y + 35;
+  } else if (Math.random() < 0.5) {
+    cat.tx = coffeeMachine.x + 10 + Math.random()*30;
+    cat.ty = coffeeMachine.y + 10;
+  } else {
+    cat.tx = 100 + Math.random()*(W-200);
+    cat.ty = 80 + Math.random()*(H-160);
+  }
+
+  // After arriving, stay for a bit then go back to desk
+  setTimeout(() => {
+    const d = desks[cat.desk];
+    cat.tx = d.x + 35;
+    cat.ty = d.y + 35;
+  }, 3000 + Math.random()*5000);
+}
+
+setInterval(assignRandomTask, 4000);
+
+// ============================================================
+// CLICK TO VIEW CAT INFO
+// ============================================================
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+
+  let found = null;
+  for (const cat of cats) {
+    const dx = mx - cat.x, dy = my - cat.y;
+    if (Math.sqrt(dx*dx+dy*dy) < 25) {
+      found = cat;
+      break;
+    }
+  }
+
+  if (found) {
+    const st = found.state==='walking'?'🚶 เดิน':found.state==='working'?'💼 ทำงาน':'😴 ว่าง';
+    info.innerHTML = `
+      <b style="color:${desks[found.desk].color}">${found.name}</b>
+      🐱 ${found.breed} · ${st}
+      &nbsp;🔄 ${found.tasks.toLocaleString()} งาน &nbsp;✅ ${found.rate}%
+      &nbsp;📋 ${found.logs[0]}
+    `;
+    info.style.display = 'block';
+  } else {
+    info.style.display = 'none';
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+  let over = false;
+  for (const cat of cats) {
+    if (Math.sqrt((mx-cat.x)**2+(my-cat.y)**2) < 25) { over = true; break; }
+  }
+  canvas.style.cursor = over ? 'pointer' : 'default';
+});
+
+// ============================================================
+// START
+// ============================================================
+loop();
+
+// Initial: all cats at their desks
+cats.forEach(cat => {
+  const d = desks[cat.desk];
+  cat.x = d.x + 35;
+  cat.y = d.y + 35;
+  cat.tx = cat.x;
+  cat.ty = cat.y;
+  cat.state = 'working';
+});
+
+// Distribute initial positions around the office
+setTimeout(() => {
+  cats.forEach((cat,i) => {
+    cat.tx = 100 + (i%4)*200 + Math.random()*60;
+    cat.ty = 120 + Math.floor(i/4)*240 + Math.random()*40;
+  });
+  // After arriving, go back to desks
+  setTimeout(() => {
+    cats.forEach(cat => {
+      const d = desks[cat.desk];
+      cat.tx = d.x + 35;
+      cat.ty = d.y + 35;
+    });
+  }, 4000);
+}, 1500);
 </script>
 </body>
 </html>

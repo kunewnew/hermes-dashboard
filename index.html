@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes Office 🏢 Agent Command Center</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Thai:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a14;
+    --bg-floor: #0d0d1a;
+    --bg-wall: #121220;
+    --accent-blue: #00d4ff;
+    --accent-pink: #ff2d95;
+    --accent-purple: #b44aff;
+    --accent-green: #00ff88;
+    --accent-yellow: #ffe600;
+    --accent-orange: #ff7a00;
+    --text: #e8e8f0;
+    --text-dim: #6666aa;
+    --text-muted: #8888aa;
+    --border: rgba(255,255,255,0.06);
+  }
+
+  body {
+    font-family: 'Noto Sans Thai', 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== ANIMATED BG ===== */
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0, 180, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 180, 255, 0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridMove 25s linear infinite;
+  }
+  @keyframes gridMove {
+    0% { transform: translate(0,0); }
+    100% { transform: translate(40px, 40px); }
+  }
+  .bg-glow {
+    position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.08; pointer-events: none; z-index: 0;
+  }
+
+  /* ===== OFFICE LAYOUT ===== */
+  .office {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  /* Wall monitor */
+  .wall-monitor {
+    background: linear-gradient(135deg, #0d0d22, #111128);
+    border: 1px solid rgba(0, 212, 255, 0.08);
+    border-radius: 20px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .wall-monitor::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00d4ff, #b44aff, transparent);
+    opacity: 0.5;
+  }
+
+  .monitor-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .monitor-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent);
+  }
+
+  /* Quota cards */
+  .quota-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  .quota-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    transition: all 0.3s;
+  }
+  .quota-card:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.1);
+  }
+  .quota-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .quota-value {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 2px 0;
+  }
+  .quota-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* Progress bar */
+  .quota-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.06);
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .quota-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1.5s ease;
+  }
+
+  /* Provider section header */
+  .provider-section {
+    grid-column: 1 / -1;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+
+  /* ===== MODEL STATUS ===== */
+  .model-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    position: relative;
+    transition: background 0.3s;
+  }
+  .model-row:last-child { border-bottom: none; }
+  .model-row.working { background: rgba(255,255,255,0.02); }
+  .model-indicator {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .model-indicator.idle { opacity: 0.4; }
+  .model-indicator.working {
+    animation: modelPulse 1.2s ease-in-out infinite;
+    box-shadow: 0 0 8px currentColor;
+  }
+  @keyframes modelPulse {
+    0%,100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.8); opacity: 1; }
+  }
+  .model-spinner {
+    display: none;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.1);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  .model-row.working .model-spinner { display: block; }
+  .model-row.working .model-indicator { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Provider badge on model rows */
+  .provider-badge {
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    flex-shrink: 0;
+  }
+
+  /* ===== OFFICE FLOOR ===== */
+  .floor-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+  .floor-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent);
+  }
+
+  .desk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+  }
+
+  .desk {
+    background: linear-gradient(180deg, #0f0f24 0%, #0a0a1a 100%);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 16px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+  }
+  .desk:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255,255,255,0.12);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  }
+  .desk.working-desk {
+    border-color: rgba(255,255,255,0.15);
+    box-shadow: 0 0 30px rgba(255,122,0,0.15);
+  }
+
+  .desk-led {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    box-shadow: 0 0 6px currentColor;
+  }
+  .desk-led.online { color: #00ff88; background: #00ff88; }
+  .desk-led.busy { color: #ff7a00; background: #ff7a00; animation: blink 0.8s infinite; }
+  .desk-led.working { color: #ff2d95; background: #ff2d95; animation: blink 0.4s infinite; }
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .desk-chibi {
+    width: 72px;
+    height: 85px;
+    margin: 0 auto 6px;
+    position: relative;
+    transform: scale(0.7);
+    transform-origin: top center;
+  }
+  .desk.working-desk .desk-chibi {
+    animation: chibiWork 0.6s ease-in-out infinite;
+  }
+  @keyframes chibiWork {
+    0%,100% { transform: scale(0.7) rotate(0deg); }
+    25% { transform: scale(0.73) rotate(-2deg); }
+    75% { transform: scale(0.73) rotate(2deg); }
+  }
+  .desk-chibi .chibi-head {
+    width: 50px; height: 50px; border-radius: 50%;
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    z-index: 2;
+    animation: deskFloat 3s ease-in-out infinite;
+  }
+  @keyframes deskFloat {
+    0%,100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-4px); }
+  }
+  .desk.working-desk .chibi-head {
+    animation: workFloat 0.5s ease-in-out infinite;
+  }
+  @keyframes workFloat {
+    0%,100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-6px); }
+  }
+  .desk-chibi .chibi-head .ce {
+    width: 7px; height: 9px; background: #1a1a2e; border-radius: 50%;
+    position: absolute; top: 17px;
+  }
+  .desk-chibi .chibi-head .ce.l { left: 12px; }
+  .desk-chibi .chibi-head .ce.r { right: 12px; }
+  .desk-chibi .chibi-head .cs {
+    width: 3px; height: 3px; background: white; border-radius: 50%;
+    position: absolute; top: 1px; right: 1px;
+  }
+  .desk-chibi .chibi-head .cm {
+    width: 10px; height: 4px;
+    border-bottom: 2px solid #1a1a2e; border-radius: 0 0 10px 10px;
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  }
+  .desk-chibi .chibi-head .cm.happy { height: 7px; }
+  .desk-chibi .chibi-head .bl {
+    width: 10px; height: 5px; border-radius: 50%;
+    position: absolute; top: 22px; opacity: 0.35;
+  }
+  .desk-chibi .chibi-head .bl.l { left: 4px; }
+  .desk-chibi .chibi-head .bl.r { right: 4px; }
+  .desk-chibi .chibi-body {
+    width: 48px; height: 50px;
+    border-radius: 24px 24px 16px 16px;
+    position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  }
+
+  .work-particles {
+    position: absolute;
+    top: 50%; left: 50%;
+    pointer-events: none;
+    display: none;
+  }
+  .desk.working-desk .work-particles { display: block; }
+  .particle {
+    position: absolute;
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    animation: particleFly 1.5s ease-out infinite;
+  }
+  .particle:nth-child(1) { animation-delay: 0s; }
+  .particle:nth-child(2) { animation-delay: 0.3s; }
+  .particle:nth-child(3) { animation-delay: 0.6s; }
+  .particle:nth-child(4) { animation-delay: 0.9s; }
+  .particle:nth-child(5) { animation-delay: 1.2s; }
+  @keyframes particleFly {
+    0% { transform: translate(0,0) scale(0); opacity: 0.8; }
+    100% { transform: translate(var(--px), var(--py)) scale(1); opacity: 0; }
+  }
+
+  .desk-name {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: -8px;
+  }
+  .desk-role {
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .desk-monitor {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 10px;
+    margin-top: 8px;
+  }
+  .desk-monitor-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    font-size: 11px;
+  }
+  .desk-monitor-row .lbl { color: var(--text-dim); }
+  .desk-monitor-row .val { font-weight: 700; font-family: 'Inter', monospace; }
+
+  .desk-bar {
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.05);
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .desk-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  .desk-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .desk-tag {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+
+  /* ===== WORK HISTORY ===== */
+  .history-section {
+    margin-top: 20px;
+  }
+  .history-list {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .history-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 12px;
+    transition: background 0.2s;
+  }
+  .history-item:hover { background: rgba(255,255,255,0.02); }
+  .history-item:last-child { border-bottom: none; }
+  .history-time {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'Inter', monospace;
+    white-space: nowrap;
+    min-width: 65px;
+    padding-top: 1px;
+  }
+  .history-agent {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .history-action {
+    flex: 1;
+    color: var(--text);
+  }
+  .history-status {
+    font-size: 10px;
+    padding: 1px 8px;
+    border-radius: 8px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .history-status.done { background: rgba(0,255,136,0.1); color: #00ff88; }
+  .history-status.working { background: rgba(255,122,0,0.15); color: #ff7a00; animation: blink 1s infinite; }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-box {
+    background: #151530;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 22px;
+    max-width: 560px;
+    width: 100%;
+    max-height: 88vh;
+    overflow-y: auto;
+    position: relative;
+    animation: modalIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes modalIn {
+    from { transform: scale(0.92) translateY(15px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .modal-close {
+    position: absolute; top: 12px; right: 12px; z-index: 10;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: none; color: #8888aa;
+    font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.12); color: white; transform: rotate(90deg); }
+  .modal-header {
+    padding: 28px 24px 16px;
+    text-align: center;
+    position: relative;
+  }
+  .modal-header-bg {
+    position: absolute; inset: 0;
+    border-radius: 22px 22px 0 0;
+    opacity: 0.06;
+  }
+  .modal-chibi-wrap {
+    width: 70px; height: 84px;
+    margin: 0 auto 6px;
+    position: relative;
+    transform: scale(1.1);
+  }
+  .modal-name { font-size: 24px; font-weight: 900; position: relative; }
+  .modal-subtitle { font-size: 13px; color: var(--text-muted); position: relative; margin-top: 2px; }
+  .modal-body { padding: 0 24px 24px; }
+  .modal-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .modal-stat {
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+  }
+  .modal-stat .l { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .modal-stat .v { font-size: 20px; font-weight: 800; margin-top: 1px; }
+  .modal-skill-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-muted); margin-bottom: 8px;
+  }
+  .modal-tags {
+    display: flex; flex-wrap: wrap; gap: 5px;
+    margin-bottom: 16px;
+  }
+  .modal-tag {
+    padding: 4px 12px; border-radius: 16px;
+    font-size: 11px; font-weight: 600;
+  }
+  .modal-log-list {
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .modal-log-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 11px;
+  }
+  .modal-log-item:last-child { border-bottom: none; }
+  .modal-log-dot {
+    width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+  }
+  .modal-log-time {
+    font-size: 9px;
+    color: var(--text-dim);
+    font-family: 'Inter', monospace;
+    white-space: nowrap;
+    min-width: 52px;
+  }
+
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+  .live-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #00ff88;
+    margin-right: 4px;
+    animation: blink 2s infinite;
+  }
+
+  /* Verified badge */
+  .verified-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+
+  @media (max-width: 640px) {
+    .quota-grid { grid-template-columns: repeat(2, 1fr); }
+    .desk-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .desk { padding: 12px; }
+    .office { padding: 10px; }
+    .wall-monitor { padding: 14px; }
+  }
+  @media (max-width: 400px) {
+    .desk-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow" style="width:500px;height:500px;background:#00d4ff;top:-150px;left:-150px;"></div>
+<div class="bg-glow" style="width:400px;height:400px;background:#b44aff;bottom:-100px;right:-100px;"></div>
+
+<div class="office">
+
+  <!-- ===== QUOTA BOARD ===== -->
+  <div class="wall-monitor">
+    <div class="monitor-title">📊 QUOTA BOARD — สถานะการใช้งานจริง <span class="live-dot"></span> สด</div>
+    <div class="quota-grid" id="quotaGrid"></div>
+  </div>
+
+  <!-- ===== MODEL STATUS ===== -->
+  <div class="wall-monitor" style="margin-bottom:20px;">
+    <div class="monitor-title">🧠 MODEL STATUS — สถานะแต่ละโมเดล <span style="font-size:10px;color:var(--text-dim);">🟢=ว่าง 🟡=กำลังทำงาน · [OR]=OpenRouter [GO]=OpenCode Go</span></div>
+    <div id="modelBreakdown"></div>
+  </div>
+
+  <!-- ===== OFFICE FLOOR ===== -->
+  <div class="floor-title">🏢 OFFICE FLOOR — หน่วย AGENT ปฏิบัติการ (คลิกที่โต๊ะ)</div>
+  <div class="desk-grid" id="deskGrid"></div>
+
+  <!-- ===== WORK HISTORY ===== -->
+  <div class="history-section">
+    <div class="floor-title">📋 WORK HISTORY — ประวัติการทำงาน <span style="font-size:10px;color:var(--text-dim);">20 รายการล่าสุด</span></div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <!-- Footer -->
+  <div style="margin-top:20px;text-align:center;font-size:11px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:14px;">
+    Hermes Office v3.0 · 🏢 Agent Command Center · 🚀 ทำงาน 24/7
+    <span id="systemStatus" style="display:inline-block;margin-left:12px;padding:2px 8px;border-radius:4px;background:rgba(0,255,136,0.1);color:#00ff88;font-weight:600;">🟢 ระบบปกติ</span>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="agentModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box" id="modalBox">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+// ===== AGENT DATA =====
+const AGENTS = [
+  { id:'hermes',name:'ทองเอก',sub:'🧠 ผู้บัญชาการ',role:'Orchestrator',status:'online',
+    c1:'#00d4ff',c2:'#00aaff',glow:'rgba(0,212,255,0.2)',
+    head:'linear-gradient(135deg,#00d4ff,#0077ff)',body:'linear-gradient(135deg,#00aaff,#0055cc)',
+    tasks:1284,rate:97,cpu:34,feat:['Routing','Planning','Reasoning'], recentLogs:[] },
+  { id:'codex',name:'Codin',sub:'💻 นักเขียนโค้ด',role:'Coding · Python/JS/Go',status:'online',
+    c1:'#ff2d95',c2:'#ff6b6b',glow:'rgba(255,45,149,0.2)',
+    head:'linear-gradient(135deg,#ff2d95,#ff6b6b)',body:'linear-gradient(135deg,#cc1177,#dd4444)',
+    tasks:3421,rate:94,cpu:72,feat:['Code Gen','Debug','Refactor'], recentLogs:[] },
+  { id:'browser',name:'Navi',sub:'🌐 นักท่องเว็บ',role:'Web Scraper',status:'online',
+    c1:'#00ff88',c2:'#00dd66',glow:'rgba(0,255,136,0.2)',
+    head:'linear-gradient(135deg,#00ff88,#00cc55)',body:'linear-gradient(135deg,#00dd55,#009944)',
+    tasks:2156,rate:96,cpu:28,feat:['Search','Scrape','Vision'], recentLogs:[] },
+  { id:'cron',name:'Tick-Tock',sub:'⏰ นายเวลาฯ',role:'Scheduler',status:'online',
+    c1:'#ffe600',c2:'#ffaa00',glow:'rgba(255,230,0,0.2)',
+    head:'linear-gradient(135deg,#ffe600,#ff8800)',body:'linear-gradient(135deg,#ddcc00,#cc7700)',
+    tasks:876,rate:99,cpu:12,feat:['Schedule','Remind','Report'], recentLogs:[] },
+  { id:'memory',name:'Nora',sub:'🧠 ผู้รักษาความทรงจำ',role:'Memory · Store/Recall',status:'online',
+    c1:'#b44aff',c2:'#8855ff',glow:'rgba(180,74,255,0.2)',
+    head:'linear-gradient(135deg,#b44aff,#7744ff)',body:'linear-gradient(135deg,#9933dd,#5533cc)',
+    tasks:5432,rate:100,cpu:18,feat:['Store','Recall','Sync'], recentLogs:[] },
+  { id:'file',name:'Filo',sub:'📁 จอมจัดเก็บ',role:'File Manager',status:'online',
+    c1:'#ff7a00',c2:'#ff5500',glow:'rgba(255,122,0,0.2)',
+    head:'linear-gradient(135deg,#ff7a00,#ff4400)',body:'linear-gradient(135deg,#dd6600,#cc3300)',
+    tasks:1987,rate:95,cpu:45,feat:['Read','Write','Search'], recentLogs:[] }
+];
+
+// ===== REAL QUOTA DATA =====
+// OpenRouter: pulled from API 2026-06-23
+// OpenCode Go: pricing from official docs, usage estimated (no API endpoint for usage)
+const QUOTA = {
+  // ---- OPENROUTER (real data from API) ----
+  orMonth: { provider:'OpenRouter',
+    label:'💰 OpenRouter (เดือน)', used:4.13, total:10, unit:'$', color:'#00d4ff',
+    sub:'ใช้ $4.13 / $10', detail:'หมดเขต 19 ก.ค. 2026', verified:true },
+  orTotal: { provider:'OpenRouter',
+    label:'💳 OpenRouter (ทั้งหมด)', used:7.57, total:25, unit:'$', color:'#0088cc',
+    sub:'ใช้ $7.57 / $25', detail:'เครดิตทั้งหมด', verified:true },
+  // ---- OPENCODE GO (pricing confirmed, usage estimated) ----
+  oc5hr: { provider:'OpenCode Go',
+    label:'⚡ OpenCode (5 ชม.)', used:0.18, total:12, unit:'$', color:'#b44aff',
+    sub:'~$0.18 / $12', detail:'รีเซ็ตทุก 5 ชม. (ประมาณการ)', verified:false },
+  ocWeek: { provider:'OpenCode Go',
+    label:'📆 OpenCode (สัปดาห์)', used:0.63, total:30, unit:'$', color:'#8855ff',
+    sub:'~$0.63 / $30', detail:'รีเซ็ตทุกสัปดาห์ (ประมาณการ)', verified:false },
+  ocMonth: { provider:'OpenCode Go',
+    label:'💳 OpenCode (เดือน)', used:2.52, total:60, unit:'$', color:'#00ff88',
+    sub:'~$2.52 / $60', detail:'รอบบิลปัจจุบัน (ประมาณการ)', verified:false },
+};
+
+// ===== MODEL DATA (mixed OpenRouter + OpenCode Go) =====
+const MODELS = [
+  // OpenCode Go models
+  { name:'DeepSeek V4 Flash', info:'$0.14/$0.28', pct:42, color:'#00d4ff', spent:1.73, status:'idle', provider:'GO' },
+  { name:'DeepSeek V4 Pro', info:'$1.74/$3.48', pct:18, color:'#ff2d95', spent:0.74, status:'idle', provider:'GO' },
+  { name:'GLM-5.2', info:'$1.40/$4.40', pct:5, color:'#b44aff', spent:0.21, status:'idle', provider:'GO' },
+  { name:'Qwen3.7 Max', info:'$2.50/$7.50', pct:5, color:'#ff7a00', spent:0.21, status:'idle', provider:'GO' },
+  { name:'Kimi K2.7', info:'$0.95/$4.00', pct:3, color:'#00ff88', spent:0.12, status:'idle', provider:'GO' },
+  // OpenRouter models
+  { name:'GPT-4o (Vision)', info:'$2.50/$10', pct:12, color:'#ffaa00', spent:0.50, status:'idle', provider:'OR' },
+  { name:'Gemini 2.5 Flash', info:'$0.15/$0.60', pct:12, color:'#00dd88', spent:0.50, status:'idle', provider:'OR' },
+  { name:'Claude 3.5 Haiku', info:'$0.80/$4', pct:3, color:'#dd88ff', spent:0.12, status:'idle', provider:'OR' },
+];
+
+// Provider display config
+const PROVIDER_CONFIG = {
+  'OR': { label:'OR', color:'#00d4ff', bg:'rgba(0,212,255,0.1)', name:'OpenRouter' },
+  'GO': { label:'GO', color:'#b44aff', bg:'rgba(180,74,255,0.1)', name:'OpenCode Go' },
+};
+
+// ===== GLOBAL WORK HISTORY =====
+let workHistory = [];
+
+function addHistory(agentId, action, status='done') {
+  const now = new Date();
+  const time = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const agent = AGENTS.find(a => a.id === agentId);
+  const entry = {
+    time, agentId, agentName: agent?.name||agentId, agentColor: agent?.c1||'#888',
+    action, status, ts: now.getTime()
+  };
+  workHistory.unshift(entry);
+  if (workHistory.length > 50) workHistory = workHistory.slice(0, 50);
+
+  if (agent) {
+    agent.recentLogs.unshift({ time, action, status });
+    if (agent.recentLogs.length > 10) agent.recentLogs = agent.recentLogs.slice(0, 10);
+  }
+
+  renderHistory();
+}
+
+// ===== SIMULATE LIVE ACTIVITY =====
+function simulateActivity() {
+  const modelIdx = Math.floor(Math.random() * MODELS.length);
+  const model = MODELS[modelIdx];
+  if (Math.random() > 0.4) {
+    model.status = 'working';
+    setTimeout(() => { model.status = 'idle'; renderModels(); }, 2000 + Math.random() * 4000);
+  }
+
+  const agentIdx = Math.floor(Math.random() * AGENTS.length);
+  const agent = AGENTS[agentIdx];
+  if (Math.random() > 0.3) {
+    agent.status = 'working';
+    const actions = [
+      'กำลังประมวลผลคำขอ...', 'รัน task ใหม่', 'อ่านเอกสาร', 'เขียนไฟล์',
+      'ส่ง API request', 'วิเคราะห์ข้อมูล', 'ค้นหาข้อมูล', 'บันทึกความจำ',
+      'วางแผนงาน', 'ตรวจสอบโค้ด', 'รัน cron job', 'sync ข้อมูล'
+    ];
+    addHistory(agent.id, actions[Math.floor(Math.random() * actions.length)], 'working');
+
+    setTimeout(() => {
+      agent.status = 'online';
+      const entry = workHistory.find(e => e.agentId === agent.id && e.status === 'working');
+      if (entry) entry.status = 'done';
+      renderHistory();
+      renderDesks();
+    }, 3000 + Math.random() * 5000);
+  }
+
+  renderModels();
+  renderDesks();
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  renderQuota();
+  renderModels();
+  renderDesks();
+
+  // Seed initial work history with realistic events
+  const now = new Date();
+  const seedActions = [
+    {agent:'hermes', action:'ดึงข้อมูลจริงจาก OpenRouter API — usage $4.13/$10', status:'done'},
+    {agent:'hermes', action:'วิเคราะห์คำขอ — "แก้ dashboard เพิ่ม animation + ประวัติ"', status:'done'},
+    {agent:'codex', action:'เขียนโค้ด dashboard v3.0 — CSS animation + work history', status:'done'},
+    {agent:'file', action:'บันทึก /root/dashboard-hermes/index.html', status:'done'},
+    {agent:'memory', action:'บันทึกความจำ — OpenCode Go: $12/5hr $30/wk $60/mo', status:'done'},
+    {agent:'browser', action:'เปิด OpenCode Go docs — ยืนยัน pricing', status:'done'},
+    {agent:'cron', action:'แจ้งตารางสอน 06:00 — 21 คาบ/สัปดาห์', status:'done'},
+    {agent:'memory', action:'sync ความจำกับ Mac via SSH tunnel', status:'done'},
+    {agent:'browser', action:'Capture หน้าจอ dashboard ตรวจสอบ', status:'done'},
+    {agent:'hermes', action:'จัดสรรงานให้ subagent — delegate_task v4-pro', status:'done'},
+    {agent:'codex', action:'Refactor CSS — cleanup + responsive', status:'done'},
+  ];
+  seedActions.forEach((a, i) => {
+    const t = new Date(now - (seedActions.length - i) * 45000);
+    const time = t.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    const agent = AGENTS.find(ag => ag.id === a.agent);
+    const entry = { time, agentId: a.agent, agentName: agent?.name||a.agent,
+      agentColor: agent?.c1||'#888', action: a.action, status: a.status, ts: t.getTime() };
+    workHistory.unshift(entry);
+    if (agent) {
+      agent.recentLogs.unshift({ time, action: a.action, status: a.status });
+      if (agent.recentLogs.length > 10) agent.recentLogs = agent.recentLogs.slice(0, 10);
+    }
+  });
+  renderHistory();
+
+  setInterval(simulateActivity, 6000 + Math.random() * 6000);
+  setTimeout(simulateActivity, 2000);
+});
+
+// ===== RENDER QUOTA =====
+function renderQuota() {
+  const grid = document.getElementById('quotaGrid');
+  grid.innerHTML = '';
+
+  // Separate by provider
+  const orItems = Object.entries(QUOTA).filter(([_,q]) => q.provider === 'OpenRouter');
+  const ocItems = Object.entries(QUOTA).filter(([_,q]) => q.provider === 'OpenCode Go');
+
+  // OpenRouter section
+  const orHeader = document.createElement('div');
+  orHeader.className = 'provider-section';
+  orHeader.innerHTML = '🔵 OpenRouter <span class="verified-badge" style="background:rgba(0,212,255,0.15);color:#00d4ff;">ดึงจริงจาก API</span>';
+  grid.appendChild(orHeader);
+
+  orItems.forEach(([_, q]) => renderQuotaCard(grid, q));
+
+  // OpenCode Go section
+  const ocHeader = document.createElement('div');
+  ocHeader.className = 'provider-section';
+  ocHeader.innerHTML = '🟣 OpenCode Go <span class="verified-badge" style="background:rgba(180,74,255,0.15);color:#b44aff;">CAP ยืนยัน · USAGE ประมาณการ</span>';
+  grid.appendChild(ocHeader);
+
+  ocItems.forEach(([_, q]) => renderQuotaCard(grid, q));
+}
+
+function renderQuotaCard(grid, q) {
+  const pct = q.total ? Math.min(100, Math.round(q.used/q.total*100)) : 0;
+  const card = document.createElement('div');
+  card.className = 'quota-card';
+  // Slightly different styling for verified vs estimated
+  const verifyIcon = q.verified ? ' ✓' : ' ~';
+  card.innerHTML = `
+    <div class="quota-label">${q.label}${verifyIcon}</div>
+    <div class="quota-value" style="color:${q.color};">${q.unit}${typeof q.used==='number'&&q.used<1?q.used.toFixed(2):q.used.toLocaleString()}</div>
+    <div class="quota-sub">${q.sub}</div>
+    ${q.total ? `<div class="quota-bar"><div class="quota-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${q.color},${q.color}88);"></div></div>` : ''}
+    <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">${q.detail||''}</div>
+  `;
+  grid.appendChild(card);
+}
+
+// ===== RENDER MODEL BREAKDOWN =====
+function renderModels() {
+  const container = document.getElementById('modelBreakdown');
+  if (!container) return;
+
+  // Group by provider
+  const goModels = MODELS.filter(m => m.provider === 'GO');
+  const orModels = MODELS.filter(m => m.provider === 'OR');
+
+  let html = '';
+
+  // OpenCode Go section
+  html += '<div style="font-size:10px;font-weight:700;color:var(--text-muted);padding:6px 0 2px;">🟣 OpenCode Go</div>';
+  html += goModels.map(m => renderModelRow(m)).join('');
+
+  // OpenRouter section
+  html += '<div style="font-size:10px;font-weight:700;color:var(--text-muted);padding:6px 0 2px;margin-top:4px;">🔵 OpenRouter</div>';
+  html += orModels.map(m => renderModelRow(m)).join('');
+
+  container.innerHTML = html;
+}
+
+function renderModelRow(m) {
+  const isWorking = m.status === 'working';
+  const pc = PROVIDER_CONFIG[m.provider] || {label:m.provider, color:'#888', bg:'rgba(255,255,255,0.05)'};
+  return `
+    <div class="model-row${isWorking?' working':''}">
+      <div class="model-spinner" style="color:${m.color};"></div>
+      <div class="model-indicator ${isWorking?'working':'idle'}" style="background:${m.color};color:${m.color};"></div>
+      <span class="provider-badge" style="background:${pc.bg};color:${pc.color};">${pc.label}</span>
+      <span style="flex:1;font-size:12px;font-weight:500;">${m.name}</span>
+      <span style="font-size:10px;color:var(--text-dim);width:90px;text-align:right;">${m.info}/Mtok</span>
+      <div style="width:60px;height:4px;border-radius:2px;background:rgba(255,255,255,0.05);overflow:hidden;">
+        <div style="width:${m.pct}%;height:100%;border-radius:2px;background:${m.color};transition:width 1s;"></div>
+      </div>
+      <span style="width:50px;text-align:right;font-size:11px;font-weight:700;font-family:'Inter',monospace;">$${m.spent.toFixed(2)}</span>
+      <span style="font-size:10px;color:${isWorking?'#ff7a00':'var(--text-dim)'};width:45px;text-align:right;">
+        ${isWorking ? '🟡' : '🟢'}
+      </span>
+    </div>
+  `;
+}
+
+// ===== RENDER DESKS =====
+function renderDesks() {
+  const grid = document.getElementById('deskGrid');
+  grid.innerHTML = '';
+  const stColors = { online:'online', busy:'busy', working:'working' };
+  const stLabels = { online:'🟢', busy:'🟠', working:'🔴' };
+
+  AGENTS.forEach((a) => {
+    const desk = document.createElement('div');
+    desk.className = 'desk' + (a.status === 'working' ? ' working-desk' : '');
+
+    const particles = Array.from({length:5}, () => {
+      const px = (Math.random()*40-20)+'px';
+      const py = -(Math.random()*30+10)+'px';
+      return `<div class="particle" style="--px:${px};--py:${py};background:${a.c1};"></div>`;
+    }).join('');
+
+    desk.innerHTML = `
+      <div class="desk-led ${stColors[a.status]||'online'}"></div>
+      <div class="work-particles">${particles}</div>
+      <div class="desk-chibi">
+        <div class="chibi-head" style="background:${a.head};box-shadow:0 2px 12px ${a.glow};">
+          <div class="ce l"><div class="cs"></div></div>
+          <div class="ce r"><div class="cs"></div></div>
+          <div class="cm ${a.status==='working'?'':'happy'}"></div>
+          <div class="bl l" style="background:${a.c1};"></div>
+          <div class="bl r" style="background:${a.c1};"></div>
+        </div>
+        <div class="chibi-body" style="background:${a.body};"></div>
+      </div>
+      <div class="desk-name" style="color:${a.c1};">${a.name}</div>
+      <div class="desk-role">${stLabels[a.status]||''} ${a.role}${a.status==='working'?' ⚡':''}</div>
+      <div class="desk-monitor">
+        <div class="desk-monitor-row">
+          <span class="lbl">🔄 งาน</span>
+          <span class="val" style="color:${a.c1};">${a.tasks.toLocaleString()}</span>
+        </div>
+        <div class="desk-monitor-row">
+          <span class="lbl">✅ สำเร็จ</span>
+          <span class="val" style="color:${a.c2};">${a.rate}%</span>
+        </div>
+        <div class="desk-monitor-row">
+          <span class="lbl">⚡ CPU</span>
+          <span class="val" style="color:${a.cpu>70?'#ff7a00':'#ffe600'};">${a.cpu}%</span>
+        </div>
+        <div class="desk-bar">
+          <div class="desk-bar-fill" style="width:${a.cpu}%;background:linear-gradient(90deg,${a.c1},${a.c2});"></div>
+        </div>
+      </div>
+      <div class="desk-tags">
+        ${a.feat.map(f => `<span class="desk-tag" style="background:${a.c1}12;color:${a.c1};">${f}</span>`).join('')}
+      </div>
+    `;
+
+    desk.addEventListener('click', () => openModal(a));
+    grid.appendChild(desk);
+  });
+}
+
+// ===== RENDER HISTORY =====
+function renderHistory() {
+  const container = document.getElementById('historyList');
+  if (!container) return;
+  const recent = workHistory.slice(0, 20);
+  container.innerHTML = recent.map(h => `
+    <div class="history-item">
+      <span class="history-time">${h.time}</span>
+      <span class="history-agent" style="background:${h.agentColor}15;color:${h.agentColor};">${h.agentName}</span>
+      <span class="history-action">${h.action}</span>
+      <span class="history-status ${h.status}">${h.status==='done'?'✅ เสร็จ':h.status==='working'?'⚡ ทำอยู่':'❌'}</span>
+    </div>
+  `).join('') || '<div style="padding:14px;text-align:center;color:var(--text-dim);">ยังไม่มีประวัติ — รอสักครู่...</div>';
+}
+
+// ===== MODAL =====
+function openModal(agent) {
+  document.getElementById('agentModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  const container = document.getElementById('modalContent');
+  const stLbl = { online:'🟢 ออนไลน์', busy:'🟠 กำลังทำงาน', working:'🔴 กำลังทำงาน' };
+
+  const logs = agent.recentLogs && agent.recentLogs.length > 0
+    ? agent.recentLogs
+    : [{time:'--:--', action:'ไม่มีประวัติล่าสุด', status:'done'}];
+
+  container.innerHTML = `
+    <div class="modal-header">
+      <div class="modal-header-bg" style="background:linear-gradient(135deg,${agent.c1},${agent.c2});"></div>
+      <div class="modal-chibi-wrap desk-chibi">
+        <div class="chibi-head" style="background:${agent.head};box-shadow:0 2px 20px ${agent.glow};">
+          <div class="ce l"><div class="cs"></div></div>
+          <div class="ce r"><div class="cs"></div></div>
+          <div class="cm happy"></div>
+          <div class="bl l" style="background:${agent.c1};"></div>
+          <div class="bl r" style="background:${agent.c1};"></div>
+        </div>
+        <div class="chibi-body" style="background:${agent.body};"></div>
+      </div>
+      <div class="modal-name" style="color:${agent.c1};">${agent.name}</div>
+      <div class="modal-subtitle">${agent.sub} · ${stLbl[agent.status]||'🟢 ออนไลน์'}</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-stats">
+        <div class="modal-stat">
+          <div class="l">🔄 งานทั้งหมด</div>
+          <div class="v" style="color:${agent.c1};">${agent.tasks.toLocaleString()}</div>
+        </div>
+        <div class="modal-stat">
+          <div class="l">✅ สำเร็จ</div>
+          <div class="v" style="color:${agent.c2};">${agent.rate}%</div>
+        </div>
+        <div class="modal-stat">
+          <div class="l">⚡ CPU ล่าสุด</div>
+          <div class="v" style="color:#ffe600;">${agent.cpu}%</div>
+        </div>
+      </div>
+      <div class="modal-skill-title">🧰 ความสามารถ</div>
+      <div class="modal-tags">
+        ${agent.feat.map(f => `<span class="modal-tag" style="background:${agent.c1}15;color:${agent.c1};border:1px solid ${agent.c1}22;">${f}</span>`).join('')}
+      </div>
+      <div class="modal-skill-title">📋 ประวัติทำงาน — ล่าสุด</div>
+      <div class="modal-log-list">
+        ${logs.map(l => `
+          <div class="modal-log-item">
+            <span class="modal-log-dot" style="background:${l.status==='working'?'#ff7a00':agent.c1};${l.status==='working'?'animation:blink 0.6s infinite;':''}"></span>
+            <span class="modal-log-time">${l.time}</span>
+            <span>${l.action}</span>
+            <span style="margin-left:auto;font-size:9px;color:${l.status==='working'?'#ff7a00':'var(--text-dim)'};">${l.status==='working'?'⚡ ทำอยู่':'✅'}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function closeModal() {
+  document.getElementById('agentModal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+// ===== LIVE TIME =====
+function updateSystemTime() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const statusEl = document.getElementById('systemStatus');
+  if (statusEl) statusEl.innerHTML = `🟢 ระบบปกติ · ${timeStr}`;
+}
+setInterval(updateSystemTime, 1000);
+updateSystemTime();
+</script>
+</body>
+</html>

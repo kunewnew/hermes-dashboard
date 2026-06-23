@@ -7,169 +7,167 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  background: #1a1a2e;
-  display: flex; justify-content: center; align-items: center;
+  background: #1a1a2e; display: flex; justify-content: center; align-items: center;
   min-height: 100vh; overflow: hidden;
-  font-family: 'Courier New', monospace;
+  font-family: 'Courier New', 'Noto Sans Thai', monospace;
 }
 #wrap { position: relative; }
-canvas { display: block; border: 3px solid #333355; border-radius: 4px; cursor: pointer; }
-#info {
-  position: absolute; bottom: 8px; left: 8px; right: 8px;
-  background: rgba(0,0,0,0.85); border: 2px solid #ffcc00;
-  color: #ffcc00; padding: 6px 12px; font-size: 11px;
-  pointer-events: none; display: none; border-radius: 3px;
+canvas { display: block; border: 2px solid #333355; cursor: pointer; }
+#panel {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.9); border-top: 2px solid #ffcc00;
+  color: #ccc; padding: 8px 14px; font-size: 11px;
+  display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
 }
-#quota {
-  position: absolute; top: 8px; right: 8px;
-  background: rgba(0,0,0,0.8); border: 1px solid #333355;
-  padding: 6px 10px; font-size: 9px; color: #8888aa;
-  display: flex; gap: 12px; border-radius: 2px;
-}
-#quota span { color: #00ff88; font-weight: 700; }
-#title {
-  position: absolute; top: 10px; left: 10px;
-  font-size: 11px; color: #ffcc00; font-weight: 700;
-  letter-spacing: 2px; text-transform: uppercase;
-  background: rgba(0,0,0,0.7); padding: 3px 8px;
-  border: 1px solid #333; border-radius: 2px;
+#panel .label { color: #888; font-size: 9px; text-transform: uppercase; }
+#panel b { margin-right: 4px; }
+#legend {
+  position: absolute; top: 6px; right: 6px;
+  background: rgba(0,0,0,0.8); border: 1px solid #333;
+  padding: 4px 8px; font-size: 9px; color: #888;
+  display: flex; gap: 10px;
 }
 </style>
 </head>
 <body>
 <div id="wrap">
   <canvas id="c"></canvas>
-  <div id="title">🐱 MEOW OFFICE</div>
-  <div id="quota">
-    OR <span>$4.13/$10</span>
-    OC <span>~$2.52/$60</span>
+  <div id="legend">
+    <span>🟢 ว่าง</span> <span>🚶 เดิน</span> <span style="color:#ffcc00">💛 ทำงาน</span>
+    <span style="color:#00ff88">💰 OR $4.13</span> <span style="color:#b44aff">⚡ OC ~$2.52</span>
   </div>
-  <div id="info"></div>
+  <div id="panel">
+    <span class="label">คลิกที่แมวเพื่อดูรายละเอียด</span>
+    <span id="panelInfo" style="color:#ffcc00;">🐱 พร้อมทำงาน...</span>
+  </div>
 </div>
 
 <script>
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
-const info = document.getElementById('info');
+const panelInfo = document.getElementById('panelInfo');
 
-const W = 960, H = 580;
+const W = 1100, H = 620;
 canvas.width = W; canvas.height = H;
 
-// Scale to fit viewport
 function resize() {
-  const scale = Math.min(innerWidth/W, innerHeight/H, 1);
+  const scale = Math.min(innerWidth/W, (innerHeight-60)/H, 1);
   canvas.style.width = W*scale+'px';
   canvas.style.height = H*scale+'px';
 }
-resize();
-window.addEventListener('resize', resize);
+resize(); window.addEventListener('resize', resize);
 
 // ============================================================
-// OFFICE LAYOUT
+// OFFICE
 // ============================================================
 const desks = [
-  { x:120, y:100, label:'ทองเอก', color:'#ffcc00' },
-  { x:340, y:100, label:'เอเรน', color:'#ff8833' },
-  { x:560, y:100, label:'Codin', color:'#44dd44' },
-  { x:780, y:100, label:'Navi', color:'#ffaa00' },
-  { x:230, y:330, label:'Tick-Tock', color:'#ffcc00' },
-  { x:450, y:330, label:'Nora', color:'#ff88cc' },
-  { x:670, y:330, label:'Filo', color:'#8888ff' },
+  { x:80, y:70, color:'#ffcc00', role:'🧠 Orchestrator' },
+  { x:330, y:70, color:'#ff8833', role:'💻 Full-Stack' },
+  { x:580, y:70, color:'#44dd44', role:'⚙️ Backend' },
+  { x:830, y:70, color:'#ffaa00', role:'🌐 Explorer' },
+  { x:180, y:280, color:'#ffcc00', role:'⏰ Scheduler' },
+  { x:450, y:280, color:'#ff88cc', role:'📚 Memory' },
+  { x:720, y:280, color:'#8888ff', role:'📁 File Manager' },
 ];
 
-const coffeeMachine = { x:30, y:430 };
-const plant1 = { x:880, y:60 };
-const plant2 = { x:50, y:60 };
-
 // ============================================================
-// CAT DATA
+// CATS
 // ============================================================
 const cats = [
-  { id:'thongek', name:'ทองเอก', breed:'วิเชียรมาศ',
+  { id:'thongek', name:'ทองเอก', breed:'วิเชียรมาศ', role:'CEO · Orchestrator',
     body:'#faf0dc', points:'#3d2b1a', eyes:'#4488ff', inner:'#f5d5c8',
     outfit:'#1a2a44', accent:'#ffcc00',
-    x:120, y:180, tx:120, ty:180, state:'working', desk:0,
-    tasks:1284, rate:97, 
-    logs:['ประชุมทีมแมว','วิเคราะห์ dashboard','จัดสรรงานให้ agent'] },
-  { id:'eren', name:'เอเรน', breed:'แมวส้มขนฟู',
+    x:80, y:140, tx:80, ty:140, state:'idle', desk:0,
+    task:'วิเคราะห์คำขอ + วางแผน', tasks:1284, rate:97 },
+  { id:'eren', name:'เอเรน', breed:'แมวส้มขนฟู', role:'Full-Stack Dev',
     body:'#ff8833', points:'#ff9944', eyes:'#44cc44', inner:'#ffbb88',
     outfit:'#ffffff', accent:'#ff4444',
-    x:340, y:180, tx:340, ty:180, state:'working', desk:1,
-    tasks:2341, rate:95,
-    logs:['เขียน CSS pixel art','ดีไซน์ตัวละครแมว','ทำ animation'] },
-  { id:'codin', name:'Codin', breed:'สีสวาท',
+    x:330, y:140, tx:330, ty:140, state:'idle', desk:1,
+    task:'เขียนโค้ด Dashboard', tasks:2341, rate:95 },
+  { id:'codin', name:'Codin', breed:'สีสวาท', role:'Backend Dev',
     body:'#8899aa', points:'#667788', eyes:'#44dd44', inner:'#aabbcc',
     outfit:'#2a2a3a', accent:'#44dd44',
-    x:560, y:180, tx:560, ty:180, state:'working', desk:2,
-    tasks:3421, rate:94,
-    logs:['Refactor โค้ด','debug ระบบ','เขียน API'] },
-  { id:'navi', name:'Navi', breed:'ขาวมณี',
+    x:580, y:140, tx:580, ty:140, state:'idle', desk:2,
+    task:'Debug API + Refactor', tasks:3421, rate:94 },
+  { id:'navi', name:'Navi', breed:'ขาวมณี', role:'Web Explorer',
     body:'#ffffff', points:'#eeeeee', eyes:'#ffaa00', inner:'#ffdddd',
     outfit:'#336644', accent:'#ffaa00',
-    x:780, y:180, tx:780, ty:180, state:'working', desk:3,
-    tasks:2156, rate:96,
-    logs:['ค้นหาข้อมูล','scrape เว็บ','วิเคราะห์รูปภาพ'] },
-  { id:'ticktock', name:'Tick-Tock', breed:'ลายสลิด',
+    x:830, y:140, tx:830, ty:140, state:'idle', desk:3,
+    task:'ค้นหา + scrape ข้อมูล', tasks:2156, rate:96 },
+  { id:'ticktock', name:'Tick-Tock', breed:'ลายสลิด', role:'Scheduler',
     body:'#999999', points:'#666666', eyes:'#ffcc00', inner:'#bbbbbb',
     outfit:'#443322', accent:'#ffcc00',
-    x:230, y:410, tx:230, ty:410, state:'working', desk:4,
-    tasks:876, rate:99,
-    logs:['แจ้งตารางสอน','cron backup','ส่งสรุปรายวัน'] },
-  { id:'nora', name:'Nora', breed:'สามสี',
+    x:180, y:350, tx:180, ty:350, state:'idle', desk:4,
+    task:'แจ้งตารางสอน + cron', tasks:876, rate:99 },
+  { id:'nora', name:'Nora', breed:'สามสี', role:'Memory Keeper',
     body:'#ffffff', points:'#ff9944', eyes:'#ff88cc', inner:'#ffbbcc',
     outfit:'#553344', accent:'#ff88cc',
-    x:450, y:410, tx:450, ty:410, state:'working', desk:5,
-    tasks:5432, rate:100,
-    logs:['บันทึกความจำ','sync ข้อมูล','ค้น session เก่า'] },
-  { id:'filo', name:'Filo', breed:'แมวดำ',
+    x:450, y:350, tx:450, ty:350, state:'idle', desk:5,
+    task:'บันทึกความจำ + sync', tasks:5432, rate:100 },
+  { id:'filo', name:'Filo', breed:'แมวดำ', role:'File Manager',
     body:'#1a1a1a', points:'#111111', eyes:'#ffdd00', inner:'#333333',
     outfit:'#333344', accent:'#ffffff',
-    x:670, y:410, tx:670, ty:410, state:'working', desk:6,
-    tasks:1987, rate:95,
-    logs:['จัดการไฟล์','เขียน document','จัดระเบียบ root'] },
+    x:720, y:350, tx:720, ty:350, state:'idle', desk:6,
+    task:'จัดการไฟล์ + document', tasks:1987, rate:95 },
 ];
 
+const coffee = { x:20, y:480 };
+const couch = { x:870, y:460, w:80, h:40 };
+
 // ============================================================
-// DRAWING HELPERS
+// DRAWING
 // ============================================================
-function drawDesk(dx, dy, color, label) {
-  // Desk shadow
+function drawDesk(d) {
+  const dx = d.x, dy = d.y;
+  // Shadow
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
-  ctx.fillRect(dx-2, dy+2, 72, 32);
-  // Desk top
+  ctx.fillRect(dx-3, dy+3, 86, 42);
+  // Desk
   ctx.fillStyle = '#3a3a50';
-  ctx.fillRect(dx, dy, 70, 30);
-  ctx.strokeStyle = '#555';
+  ctx.fillRect(dx, dy, 82, 38);
+  ctx.strokeStyle = '#555588';
   ctx.lineWidth = 2;
-  ctx.strokeRect(dx, dy, 70, 30);
+  ctx.strokeRect(dx, dy, 82, 38);
+
   // Monitor
   ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(dx+20, dy-14, 30, 18);
-  ctx.strokeStyle = '#444';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(dx+20, dy-14, 30, 18);
-  // Screen glow
-  ctx.fillStyle = color+'22';
-  ctx.fillRect(dx+22, dy-12, 26, 14);
-  // Desk legs
-  ctx.fillStyle = '#444';
-  ctx.fillRect(dx+4, dy+30, 4, 8);
-  ctx.fillRect(dx+62, dy+30, 4, 8);
-  // Name plate
-  ctx.fillStyle = '#111';
-  ctx.fillRect(dx+8, dy+2, 54, 10);
-  ctx.fillStyle = color;
-  ctx.font = '7px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText(label, dx+35, dy+10);
-  // Activity dots on screen
+  ctx.fillRect(dx+22, dy-20, 38, 24);
+  ctx.strokeStyle = '#444466';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(dx+22, dy-20, 38, 24);
+  // Screen content
   const t = Date.now()/1000;
-  for (let i=0;i<3;i++) {
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.3 + 0.5*Math.abs(Math.sin(t*2+i));
-    ctx.fillRect(dx+24+i*8, dy-10, 4, 4);
+  ctx.fillStyle = d.color+'15';
+  ctx.fillRect(dx+24, dy-18, 34, 20);
+  // Code lines on screen
+  for (let i=0;i<4;i++) {
+    ctx.fillStyle = d.color;
+    ctx.globalAlpha = 0.3 + 0.3*Math.sin(t*3+i);
+    ctx.fillRect(dx+26, dy-14+i*5, 15+Math.sin(t+i)*8, 2);
     ctx.globalAlpha = 1;
   }
+  // Monitor stand
+  ctx.fillStyle = '#333';
+  ctx.fillRect(dx+36, dy+4, 10, 6);
+
+  // Name plate
+  ctx.fillStyle = '#111122';
+  ctx.fillRect(dx+10, dy+28, 62, 10);
+  ctx.fillStyle = d.color;
+  ctx.font = '8px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(d.label||'', dx+41, dy+36);
+
+  // Role tag
+  ctx.fillStyle = d.color+'22';
+  ctx.fillRect(dx+10, dy+2, 62, 8);
+  ctx.fillStyle = d.color;
+  ctx.font = '7px sans-serif';
+  ctx.fillText(d.role, dx+41, dy+9);
+
+  // Keyboard on desk
+  ctx.fillStyle = '#222';
+  ctx.fillRect(dx+14, dy+16, 54, 8);
 }
 
 function drawCat(cat) {
@@ -177,242 +175,229 @@ function drawCat(cat) {
   ctx.save();
   ctx.translate(x, y);
 
-  // Walking animation
   let bob = 0, legOff = 0;
+  const walkCycle = Date.now()/150;
   if (state === 'walking') {
-    const t = Date.now()/150;
-    bob = Math.abs(Math.sin(t*2))*3;
-    legOff = Math.sin(t*3)*2;
+    bob = Math.abs(Math.sin(walkCycle*2))*4;
+    legOff = Math.sin(walkCycle*3)*3;
   }
 
-  // Shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.beginPath();
-  ctx.ellipse(0, 22+bob, 14, 5, 0, 0, Math.PI*2);
-  ctx.fill();
-
-  // TAIL
-  const tailT = state==='working' ? Date.now()/300 : Date.now()/200;
-  const tailAngle = state==='walking' ? Math.sin(tailT*4)*0.4 : Math.sin(tailT)*0.25;
-  ctx.save();
-  ctx.translate(0, 6+bob);
-  ctx.rotate(0.3 + tailAngle);
-  ctx.fillStyle = points;
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.quadraticCurveTo(8, -8, 12, -18);
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = points;
-  ctx.stroke();
-  // Tail tip
-  ctx.fillStyle = points;
-  ctx.beginPath();
-  ctx.arc(12, -18, 3, 0, Math.PI*2);
-  ctx.fill();
-  ctx.restore();
-
-  // LEGS (back)
-  ctx.fillStyle = body;
-  ctx.fillRect(-4+legOff, 14+bob, 7, 8);
-  ctx.fillRect(2-legOff, 14+bob, 7, 8);
-  // Paws
-  ctx.fillStyle = points;
-  ctx.beginPath();
-  ctx.arc(-0.5+legOff, 22+bob, 4.5, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath();
-  ctx.arc(5.5-legOff, 22+bob, 4.5, 0, Math.PI*2); ctx.fill();
-
-  // BODY with outfit
-  ctx.fillStyle = outfit;
-  ctx.fillRect(-8, 0+bob, 16, 18);
-  // Outfit detail - tie/scarf
-  ctx.fillStyle = accent;
-  ctx.fillRect(-1, 2+bob, 3, 10);
-  // Belt
-  ctx.fillStyle = '#333';
-  ctx.fillRect(-8, 12+bob, 16, 2);
-
-  // ARMS
-  const armSwing = state==='walking' ? Math.sin(Date.now()/150)*5 : 0;
-  // Left arm
-  ctx.fillStyle = body;
-  ctx.beginPath();
-  ctx.ellipse(-10+armSwing, 5+bob, 4, 10, -0.3, 0, Math.PI*2);
-  ctx.fill();
-  // Right arm
-  ctx.beginPath();
-  ctx.ellipse(10-armSwing, 5+bob, 4, 10, 0.3, 0, Math.PI*2);
-  ctx.fill();
-  // Paw hands
-  ctx.fillStyle = points;
-  ctx.beginPath(); ctx.arc(-10+armSwing, 14+bob, 3, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(10-armSwing, 14+bob, 3, 0, Math.PI*2); ctx.fill();
-
-  // HEAD
-  ctx.fillStyle = body;
-  ctx.beginPath();
-  ctx.arc(0, -5+bob, 12, 0, Math.PI*2);
-  ctx.fill();
-
-  // EARS
-  // Left ear
-  ctx.fillStyle = points;
-  ctx.beginPath();
-  ctx.moveTo(-10, -8+bob);
-  ctx.lineTo(-14, -22+bob);
-  ctx.lineTo(-3, -10+bob);
-  ctx.fill();
-  // Left inner
-  ctx.fillStyle = inner;
-  ctx.beginPath();
-  ctx.moveTo(-8, -9+bob);
-  ctx.lineTo(-11, -18+bob);
-  ctx.lineTo(-4, -10+bob);
-  ctx.fill();
-  // Right ear
-  ctx.fillStyle = points;
-  ctx.beginPath();
-  ctx.moveTo(10, -8+bob);
-  ctx.lineTo(14, -22+bob);
-  ctx.lineTo(3, -10+bob);
-  ctx.fill();
-  // Right inner
-  ctx.fillStyle = inner;
-  ctx.beginPath();
-  ctx.moveTo(8, -9+bob);
-  ctx.lineTo(11, -18+bob);
-  ctx.lineTo(4, -10+bob);
-  ctx.fill();
-
-  // Face mask (siamese)
-  if (cat.id === 'thongek') {
-    ctx.fillStyle = points+'44';
-    ctx.beginPath();
-    ctx.ellipse(0, -4+bob, 8, 7, 0, 0, Math.PI*2);
-    ctx.fill();
-  }
-
-  // Eyes
-  const eyeY = -6+bob;
-  // Left eye
-  ctx.fillStyle = eyes;
-  ctx.beginPath(); ctx.ellipse(-5, eyeY, 3, 3.5, 0, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#111';
-  ctx.beginPath(); ctx.arc(-4.5, eyeY+0.5, 1.5, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(-5, eyeY-0.5, 0.8, 0, Math.PI*2); ctx.fill();
-  // Right eye
-  ctx.fillStyle = eyes;
-  ctx.beginPath(); ctx.ellipse(5, eyeY, 3, 3.5, 0, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#111';
-  ctx.beginPath(); ctx.arc(5.5, eyeY+0.5, 1.5, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(5, eyeY-0.5, 0.8, 0, Math.PI*2); ctx.fill();
-
-  // Nose
-  ctx.fillStyle = '#ff9999';
-  ctx.beginPath(); ctx.arc(0, -1+bob, 2, 0, Math.PI*2); ctx.fill();
-  // Mouth
-  ctx.strokeStyle = '#666';
-  ctx.lineWidth = 0.8;
-  ctx.beginPath();
-  ctx.moveTo(0, 1+bob);
-  ctx.quadraticCurveTo(-3, 3+bob, -5, 2+bob);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(0, 1+bob);
-  ctx.quadraticCurveTo(3, 3+bob, 5, 2+bob);
-  ctx.stroke();
-
-  // Whiskers
-  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-  ctx.lineWidth = 0.6;
-  for (let s=-1;s<=1;s+=2) {
-    ctx.beginPath(); ctx.moveTo(s*4, -1+bob); ctx.lineTo(s*12, -4+bob); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(s*4, 0+bob); ctx.lineTo(s*12, 0+bob); ctx.stroke();
-  }
-
-  // Working indicator
+  // === STATUS INDICATOR ===
   if (state === 'working') {
-    const t = Date.now()/200;
+    const t = Date.now()/400;
+    // Glow aura
     ctx.fillStyle = '#ffcc00';
-    ctx.globalAlpha = 0.4+0.3*Math.sin(t*3);
-    ctx.beginPath(); ctx.arc(8, -12+bob, 3, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 0.08 + 0.04*Math.sin(t*3);
+    ctx.beginPath(); ctx.arc(0, 0, 28, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+    // Work icon above
+    ctx.fillStyle = '#ffcc00';
+    ctx.globalAlpha = 0.5 + 0.4*Math.sin(t*4);
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚡', 0, -30+bob);
+    ctx.globalAlpha = 1;
+  } else if (state === 'walking') {
+    // Walking dots
+    ctx.fillStyle = '#fff';
+    ctx.globalAlpha = 0.3;
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🚶', 14, -12+bob);
     ctx.globalAlpha = 1;
   }
 
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(0, 23+bob, 14, 5, 0, 0, Math.PI*2); ctx.fill();
+
+  // TAIL
+  const tailT = Date.now()/250;
+  const tailAngle = state==='walking' ? Math.sin(walkCycle*3)*0.5 : Math.sin(tailT)*0.2;
+  ctx.save();
+  ctx.translate(0, 7+bob);
+  ctx.rotate(0.3 + tailAngle);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(7, -7, 11, -16);
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = points;
+  ctx.stroke();
+  ctx.fillStyle = points;
+  ctx.beginPath(); ctx.arc(11, -16, 3, 0, Math.PI*2); ctx.fill();
   ctx.restore();
-}
 
-// ============================================================
-// DRAW SCENE
-// ============================================================
-function drawFloor() {
-  // Floor
-  ctx.fillStyle = '#2a2a3a';
-  ctx.fillRect(0, 0, W, H);
-  // Floor tiles
-  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
-  ctx.lineWidth = 1;
-  for (let x=0;x<W;x+=40) {
-    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
-  }
-  for (let y=0;y<H;y+=40) {
-    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
-  }
-  // Carpet area
-  ctx.fillStyle = 'rgba(60,40,30,0.3)';
-  ctx.fillRect(80, 60, 820, 480);
+  // LEGS
+  ctx.fillStyle = body;
+  ctx.fillRect(-4+legOff, 15+bob, 7, 8);
+  ctx.fillRect(2-legOff, 15+bob, 7, 8);
+  // Paws
+  ctx.fillStyle = points;
+  ctx.beginPath(); ctx.arc(-0.5+legOff, 23+bob, 4.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(5.5-legOff, 23+bob, 4.5, 0, Math.PI*2); ctx.fill();
 
-  // Walls
-  ctx.fillStyle = '#1e1e32';
-  ctx.fillRect(0,0,W,8); // top wall
-  ctx.fillRect(0,0,8,H); // left wall
-  ctx.fillRect(W-8,0,8,H); // right wall
-  ctx.fillRect(0,H-8,W,8); // bottom wall
+  // BODY + OUTFIT
+  ctx.fillStyle = outfit;
+  ctx.fillRect(-8, 0+bob, 16, 20);
+  // Accent (tie/scarf)
+  ctx.fillStyle = accent;
+  ctx.fillRect(-1, 3+bob, 3, 11);
+  // Belt
+  ctx.fillStyle = '#333';
+  ctx.fillRect(-8, 13+bob, 16, 2);
+
+  // ARMS
+  const armSwing = state==='walking' ? Math.sin(walkCycle*2)*6 : 0;
+  ctx.fillStyle = body;
+  ctx.save(); ctx.translate(-10+armSwing, 5+bob); ctx.rotate(-0.2);
+  ctx.fillRect(-3, 0, 7, 14); ctx.restore();
+  ctx.save(); ctx.translate(10-armSwing, 5+bob); ctx.rotate(0.2);
+  ctx.fillRect(-3, 0, 7, 14); ctx.restore();
+  // Paw hands
+  ctx.fillStyle = points;
+  ctx.beginPath(); ctx.arc(-10+armSwing, 18+bob, 3.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(10-armSwing, 18+bob, 3.5, 0, Math.PI*2); ctx.fill();
+
+  // HEAD
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.arc(0, -6+bob, 13, 0, Math.PI*2); ctx.fill();
+
+  // EARS
+  [['left',-1],['right',1]].forEach(([_,s]) => {
+    ctx.fillStyle = points;
+    ctx.beginPath();
+    ctx.moveTo(s*10, -9+bob); ctx.lineTo(s*15, -24+bob); ctx.lineTo(s*3, -12+bob);
+    ctx.fill();
+    ctx.fillStyle = inner;
+    ctx.beginPath();
+    ctx.moveTo(s*8, -10+bob); ctx.lineTo(s*12, -20+bob); ctx.lineTo(s*4, -12+bob);
+    ctx.fill();
+  });
+
+  // Siamese mask
+  if (cat.id==='thongek') {
+    ctx.fillStyle = points+'33';
+    ctx.beginPath(); ctx.ellipse(0, -5+bob, 9, 7.5, 0, 0, Math.PI*2); ctx.fill();
+  }
+
+  // EYES
+  [-1,1].forEach(s => {
+    const ex = s*5, ey = -7+bob;
+    ctx.fillStyle = eyes;
+    ctx.beginPath(); ctx.ellipse(ex, ey, 3.2, 3.8, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.arc(ex+0.5, ey+0.5, 1.6, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(ex-0.3, ey-0.5, 0.7, 0, Math.PI*2); ctx.fill();
+  });
+
+  // NOSE & MOUTH
+  ctx.fillStyle = '#ff9999';
+  ctx.beginPath(); ctx.arc(0, -2+bob, 2.2, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#666';
+  ctx.lineWidth = 0.7;
+  [-3,3].forEach(s => {
+    ctx.beginPath(); ctx.moveTo(0, 1+bob); ctx.quadraticCurveTo(s, 4+bob, s*1.8, 2+bob); ctx.stroke();
+  });
+
+  // WHISKERS
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 0.5;
+  [-1,1].forEach(s => {
+    ctx.beginPath(); ctx.moveTo(s*4, -1+bob); ctx.lineTo(s*13, -4+bob); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s*4, 1+bob); ctx.lineTo(s*13, 1+bob); ctx.stroke();
+  });
+
+  ctx.restore();
+
+  // === NAME LABEL (always visible) ===
+  const lblY = y - 38;
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  ctx.fillRect(x-30, lblY-8, 60, 16);
+  ctx.fillStyle = desks[cat.desk].color;
+  ctx.font = 'bold 9px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(cat.name, x, lblY+4);
+  // Status + role below name
+  ctx.fillStyle = state==='working'?'#ffcc00':state==='walking'?'#8888ff':'#666';
+  ctx.font = '7px sans-serif';
+  const statusText = state==='working'?'💛 ทำงาน':state==='walking'?'🚶 เดินไป...':'🟢 '+cat.role;
+  ctx.fillText(statusText, x, lblY+14);
 }
 
 function drawProps() {
+  // Carpet
+  ctx.fillStyle = 'rgba(50,35,25,0.25)';
+  ctx.fillRect(60, 40, 980, 540);
+
   // Coffee machine
-  ctx.fillStyle = '#443322';
-  ctx.fillRect(coffeeMachine.x, coffeeMachine.y, 20, 28);
+  ctx.fillStyle = '#3a2a1a';
+  ctx.fillRect(coffee.x, coffee.y, 22, 30);
+  ctx.fillStyle = '#554433';
+  ctx.fillRect(coffee.x+2, coffee.y+2, 18, 10);
   ctx.fillStyle = '#ffcc00';
-  ctx.fillRect(coffeeMachine.x+4, coffeeMachine.y+4, 12, 6);
+  ctx.fillRect(coffee.x+6, coffee.y+4, 10, 6);
   ctx.fillStyle = '#fff';
-  ctx.font = '7px monospace';
-  ctx.fillText('☕', coffeeMachine.x+5, coffeeMachine.y+26);
+  ctx.font = '8px sans-serif';
+  ctx.fillText('☕', coffee.x+8, coffee.y+28);
+
+  // Couch
+  ctx.fillStyle = '#3a3040';
+  ctx.fillRect(couch.x, couch.y, couch.w, couch.h);
+  ctx.fillStyle = '#4a4050';
+  ctx.fillRect(couch.x+3, couch.y+3, couch.w-6, couch.h-6);
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  ctx.fillRect(couch.x+10, couch.y+8, 25, couch.h-16);
+  ctx.fillRect(couch.x+45, couch.y+8, 25, couch.h-16);
 
   // Plants
-  [plant1, plant2].forEach(p => {
-    ctx.fillStyle = '#553322';
-    ctx.fillRect(p.x+6, p.y+12, 12, 16);
-    ctx.fillStyle = '#228833';
-    ctx.beginPath(); ctx.arc(p.x+12, p.y+8, 14, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#33aa44';
-    ctx.beginPath(); ctx.arc(p.x+12, p.y+6, 10, 0, Math.PI*2); ctx.fill();
+  [{x:920,y:55},{x:55,y:510}].forEach(p => {
+    ctx.fillStyle = '#4a3020';
+    ctx.fillRect(p.x+8, p.y+14, 14, 18);
+    ctx.fillStyle = '#338833';
+    ctx.beginPath(); ctx.arc(p.x+15, p.y+8, 16, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#44aa44';
+    ctx.beginPath(); ctx.arc(p.x+15, p.y+6, 12, 0, Math.PI*2); ctx.fill();
   });
+
+  // Clock on wall
+  ctx.fillStyle = '#222';
+  ctx.beginPath(); ctx.arc(550, 22, 14, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#ffcc00';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(550, 22, 14, 0, Math.PI*2); ctx.stroke();
+  const now = new Date();
+  const hourAngle = (now.getHours()%12)*Math.PI/6 - Math.PI/2;
+  const minAngle = now.getMinutes()*Math.PI/30 - Math.PI/2;
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(550,22); ctx.lineTo(550+Math.cos(hourAngle)*7, 22+Math.sin(hourAngle)*7); ctx.stroke();
+  ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(550,22); ctx.lineTo(550+Math.cos(minAngle)*10, 22+Math.sin(minAngle)*10); ctx.stroke();
+}
+
+function drawFloor() {
+  ctx.fillStyle = '#222233';
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+  ctx.lineWidth = 1;
+  for (let x=0;x<W;x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y=0;y<H;y+=40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 }
 
 // ============================================================
-// MAIN LOOP
+// GAME LOOP
 // ============================================================
 function update() {
   cats.forEach(cat => {
-    const dx = cat.tx - cat.x;
-    const dy = cat.ty - cat.y;
+    const dx = cat.tx - cat.x, dy = cat.ty - cat.y;
     const dist = Math.sqrt(dx*dx+dy*dy);
-
-    if (dist > 1) {
+    if (dist > 0.8) {
       cat.state = 'walking';
-      const speed = 2;
-      cat.x += (dx/dist) * speed;
-      cat.y += (dy/dist) * speed;
+      cat.x += (dx/dist)*2.2;
+      cat.y += (dy/dist)*2.2;
     } else {
-      cat.x = cat.tx;
-      cat.y = cat.ty;
-      if (cat.state === 'walking') {
-        cat.state = 'working';
-      }
+      cat.x = cat.tx; cat.y = cat.ty;
+      cat.state = 'working';
     }
   });
 }
@@ -421,127 +406,114 @@ function draw() {
   ctx.clearRect(0, 0, W, H);
   drawFloor();
   drawProps();
-
-  // Draw desks
-  desks.forEach(d => drawDesk(d.x, d.y, d.color, d.label));
-
-  // Draw cats (sorted by y for depth)
-  const sorted = [...cats].sort((a,b) => a.y - b.y);
-  sorted.forEach(cat => drawCat(cat));
+  desks.forEach(d => drawDesk(d));
+  [...cats].sort((a,b)=>a.y-b.y).forEach(cat => drawCat(cat));
 }
 
-function loop() {
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
+function loop() { update(); draw(); requestAnimationFrame(loop); }
 
 // ============================================================
-// AI: ASSIGN TASKS (random cat walks to random spot)
+// TASK ASSIGNMENT — cats walk to do things
 // ============================================================
-function assignRandomTask() {
+const actions = [
+  'กำลังเขียนโค้ด...', 'debug ระบบ', 'ค้นหาข้อมูล', 'อ่านเอกสาร',
+  'sync ข้อมูล', 'วางแผนงาน', 'ตรวจสอบ API', 'บันทึกความจำ',
+  'รัน cron job', 'Refactor โมดูล', 'review PR', 'pop ส่งงาน'
+];
+
+function assignTask() {
   const cat = cats[Math.floor(Math.random()*cats.length)];
   if (cat.state === 'walking') return;
 
-  // 70% walk to desk, 30% walk to coffee/random
-  if (Math.random() < 0.7) {
+  // Random destination
+  const r = Math.random();
+  if (r < 0.55) {
+    // Go to desk to work
     const d = desks[cat.desk];
-    cat.tx = d.x + 35;
-    cat.ty = d.y + 35;
-  } else if (Math.random() < 0.5) {
-    cat.tx = coffeeMachine.x + 10 + Math.random()*30;
-    cat.ty = coffeeMachine.y + 10;
+    cat.tx = d.x + 41; cat.ty = d.y + 42;
+  } else if (r < 0.75) {
+    // Coffee break
+    cat.tx = coffee.x + 10 + Math.random()*30;
+    cat.ty = coffee.y + 10;
+  } else if (r < 0.9) {
+    // Couch break
+    cat.tx = couch.x + 20 + Math.random()*40;
+    cat.ty = couch.y + 10;
   } else {
-    cat.tx = 100 + Math.random()*(W-200);
-    cat.ty = 80 + Math.random()*(H-160);
+    // Walk to random spot
+    cat.tx = 90 + Math.random()*(W-180);
+    cat.ty = 55 + Math.random()*(H-110);
   }
 
-  // After arriving, stay for a bit then go back to desk
+  // After 3-7s, go back to desk
+  const delay = 2500 + Math.random()*5000;
   setTimeout(() => {
     const d = desks[cat.desk];
-    cat.tx = d.x + 35;
-    cat.ty = d.y + 35;
-  }, 3000 + Math.random()*5000);
+    cat.tx = d.x + 41; cat.ty = d.y + 42;
+  }, delay);
+
+  // Update panel
+  const action = actions[Math.floor(Math.random()*actions.length)];
+  panelInfo.innerHTML = `<b style="color:${desks[cat.desk].color}">${cat.name}</b> ${action}`;
 }
 
-setInterval(assignRandomTask, 4000);
+setInterval(assignTask, 3500);
 
 // ============================================================
-// CLICK TO VIEW CAT INFO
+// CLICK INTERACTION
 // ============================================================
-canvas.addEventListener('click', (e) => {
+canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
-  const scaleX = W / rect.width;
-  const scaleY = H / rect.height;
-  const mx = (e.clientX - rect.left) * scaleX;
-  const my = (e.clientY - rect.top) * scaleY;
+  const mx = (e.clientX-rect.left)*(W/rect.width);
+  const my = (e.clientY-rect.top)*(H/rect.height);
 
-  let found = null;
   for (const cat of cats) {
-    const dx = mx - cat.x, dy = my - cat.y;
-    if (Math.sqrt(dx*dx+dy*dy) < 25) {
-      found = cat;
-      break;
+    if (Math.sqrt((mx-cat.x)**2+(my-cat.y)**2) < 26) {
+      const d = desks[cat.desk];
+      panelInfo.innerHTML = `
+        <b style="color:${d.color}">🐱 ${cat.name}</b>
+        พันธุ์${cat.breed} · ${cat.role}
+        &nbsp;🔄 <b>${cat.tasks.toLocaleString()}</b> งาน
+        &nbsp;✅ <b>${cat.rate}%</b> สำเร็จ
+        &nbsp;📋 <b>${cat.task}</b>
+      `;
+      return;
     }
   }
-
-  if (found) {
-    const st = found.state==='walking'?'🚶 เดิน':found.state==='working'?'💼 ทำงาน':'😴 ว่าง';
-    info.innerHTML = `
-      <b style="color:${desks[found.desk].color}">${found.name}</b>
-      🐱 ${found.breed} · ${st}
-      &nbsp;🔄 ${found.tasks.toLocaleString()} งาน &nbsp;✅ ${found.rate}%
-      &nbsp;📋 ${found.logs[0]}
-    `;
-    info.style.display = 'block';
-  } else {
-    info.style.display = 'none';
-  }
+  panelInfo.innerHTML = '<span style="color:#888">คลิกที่แมวเพื่อดูข้อมูล 🐱</span>';
 });
 
-canvas.addEventListener('mousemove', (e) => {
+canvas.addEventListener('mousemove', e => {
   const rect = canvas.getBoundingClientRect();
-  const scaleX = W / rect.width;
-  const scaleY = H / rect.height;
-  const mx = (e.clientX - rect.left) * scaleX;
-  const my = (e.clientY - rect.top) * scaleY;
-  let over = false;
-  for (const cat of cats) {
-    if (Math.sqrt((mx-cat.x)**2+(my-cat.y)**2) < 25) { over = true; break; }
-  }
+  const mx = (e.clientX-rect.left)*(W/rect.width);
+  const my = (e.clientY-rect.top)*(H/rect.height);
+  let over = cats.some(c => Math.sqrt((mx-c.x)**2+(my-c.y)**2) < 26);
   canvas.style.cursor = over ? 'pointer' : 'default';
 });
 
 // ============================================================
-// START
+// INIT
 // ============================================================
-loop();
-
-// Initial: all cats at their desks
 cats.forEach(cat => {
   const d = desks[cat.desk];
-  cat.x = d.x + 35;
-  cat.y = d.y + 35;
-  cat.tx = cat.x;
-  cat.ty = cat.y;
+  cat.x = d.x+41; cat.y = d.y+42;
+  cat.tx = cat.x; cat.ty = cat.y;
   cat.state = 'working';
 });
 
-// Distribute initial positions around the office
+// After 2s, cats spread out
 setTimeout(() => {
   cats.forEach((cat,i) => {
-    cat.tx = 100 + (i%4)*200 + Math.random()*60;
-    cat.ty = 120 + Math.floor(i/4)*240 + Math.random()*40;
+    cat.tx = 120+(i%4)*230+Math.random()*50;
+    cat.ty = 100+Math.floor(i/4)*240+Math.random()*30;
   });
-  // After arriving, go back to desks
-  setTimeout(() => {
-    cats.forEach(cat => {
-      const d = desks[cat.desk];
-      cat.tx = d.x + 35;
-      cat.ty = d.y + 35;
-    });
-  }, 4000);
-}, 1500);
+  setTimeout(() => cats.forEach(cat => {
+    const d = desks[cat.desk];
+    cat.tx = d.x+41; cat.ty = d.y+42;
+  }), 3500);
+}, 1800);
+
+loop();
 </script>
 </body>
 </html>
